@@ -1,10 +1,14 @@
 package se2gce17.openhab_se2;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputEditText;
@@ -23,6 +27,7 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -36,7 +41,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.w3c.dom.Text;
+import se2gce17.openhab_se2.cwac_loclpoll.LocationPoller;
+import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
+
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener{
@@ -53,6 +60,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Location home;
 
     private Intent serviceIntent;
+
+    private static final int PERIOD=60000; 	// 1 minute
+    private PendingIntent pi=null;
+    private AlarmManager mgr=null;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -105,12 +116,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (home == null || usernameEt.getText().length() < 3) {
                             serviceSwitch.setActivated(false);
                         } else {
+
                             startService(usernameEt.getText().toString(), home);
                         }
                     } else {
-                        if (serviceIntent != null) {
-                            stopService(serviceIntent);
-                            serviceIntent = null;
+                        if (mgr != null) {
+                            mgr.cancel(pi);
+                            mgr = null;
                         }
 
                     }
@@ -209,7 +221,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             if(l != null){
                 LatLng currentLocation = new LatLng(l.getLatitude(), l.getLongitude());
-//        mMap.addMarker(new MarkerOptions().position(currentLocation).title("Marker in Sydney"));
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
 
@@ -263,15 +274,37 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void startService(String username, Location home){
+        Log.e("Service","Starting service ");
+        mgr=(AlarmManager)getSystemService(ALARM_SERVICE);
+
+        Intent i=new Intent(this, LocationPoller.class);
+
+        Bundle bundle = new Bundle();
+        LocationPollerParameter parameter = new LocationPollerParameter(bundle);
+        parameter.setIntentToBroadcastOnCompletion(new Intent(this, LocationReceiver.class));
+        // try GPS and fall back to NETWORK_PROVIDER
+        parameter.setProviders(new String[] {LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER});
+        parameter.setTimeout(10000); // 10 sek
+        i.putExtras(bundle);
+        i.putExtra("user",username);
+        i.putExtra("home",home);
 
 
+        pi=PendingIntent.getBroadcast(this, 0, i, 0);
+        mgr.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime(),
+                PERIOD,
+                pi);
 
-        serviceIntent = new Intent(this, LocationService.class);
-        serviceIntent.putExtra("user",username);
-        serviceIntent.putExtra("home",home);
-        this.startService(serviceIntent);
-
+        Toast
+                .makeText(this,
+                        "Location polling every minute begun",
+                        Toast.LENGTH_LONG)
+                .show();
     }
+
+
+
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -306,7 +339,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         currentLocation = location;
         Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-//        mMap.addMarker(new MarkerOptions().position(currentLocation).title("Marker in Sydney"));
         if(mMap != null){
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
         }
