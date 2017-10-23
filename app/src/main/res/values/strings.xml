@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">openhab-se2</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="default_upload_website">http://95.85.57.71:8080/NorthqGpsService/gps?</string>
+    <string name="title_activity_navigation">NavigationActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_somesome">somesome</string>
+    <string name="title_location_permission">Request location permission</string>
+    <string name="text_location_permission">this app requires pomission to location data, for working properly</string>
+    <string name="ok">OK</string>
+</resources>

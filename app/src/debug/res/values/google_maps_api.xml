@@ -1,0 +1,26 @@
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=44:28:68:98:11:90:7B:3C:E2:CE:60:98:08:69:0F:FB:17:F5:6F:03%3Bse2gce17.openhab_se2
+
+    You can also add your credentials to an existing key, using these values:
+
+    Package name:
+    44:28:68:98:11:90:7B:3C:E2:CE:60:98:08:69:0F:FB:17:F5:6F:03
+
+    SHA-1 certificate fingerprint:
+    44:28:68:98:11:90:7B:3C:E2:CE:60:98:08:69:0F:FB:17:F5:6F:03
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyA4s7b8O7PSo-aRMVz8W_804Xqugpv8YM4
+    </string>
+</resources>
