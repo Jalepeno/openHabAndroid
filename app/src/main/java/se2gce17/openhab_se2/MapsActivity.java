@@ -5,6 +5,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -84,10 +85,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
-        if(checkLocationPermission()){
 
 
+        if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
 
+            // google client setup
             if (mGoogleApiClient == null) {
                 mGoogleApiClient = new GoogleApiClient.Builder(this)
                         .addConnectionCallbacks(this)
@@ -97,7 +99,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
 
-
+            // click listener for home button
             homeImg.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -109,12 +111,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
 
+            // event listener for switch
             serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                     if (b) {
+                        // in case of home location has not been set, and username not set
+                        // we cannot start using service.
                         if (home == null || usernameEt.getText().length() < 3) {
-                            serviceSwitch.setActivated(false);
+                            serviceSwitch.setChecked(false);
                         } else {
 
                             startService(usernameEt.getText().toString(), home);
@@ -123,6 +128,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (mgr != null) {
                             mgr.cancel(pi);
                             mgr = null;
+                            Toast
+                                    .makeText(MapsActivity.this,
+                                            "Service cancelled",
+                                            Toast.LENGTH_LONG)
+                                    .show();
                         }
 
                     }
@@ -242,6 +252,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    /**
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -273,6 +289,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+
+    /**
+     * starting wakeful service, that wakes up and asks for
+     * @param username
+     * @param home
+     */
     public void startService(String username, Location home){
         Log.e("Service","Starting service ");
         mgr=(AlarmManager)getSystemService(ALARM_SERVICE);
@@ -281,13 +303,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Bundle bundle = new Bundle();
         LocationPollerParameter parameter = new LocationPollerParameter(bundle);
-        parameter.setIntentToBroadcastOnCompletion(new Intent(this, LocationReceiver.class));
+
+        // this will be the intent that the LocationReceiver will receive
+        Intent broardcastIntent = new Intent(this, LocationReceiver.class);
+        broardcastIntent.putExtra("user",username);
+        broardcastIntent.putExtra("home",home);
+
+        final String SOME_ACTION = "se2gce17.openhab_se2.LocationReceiver";
+        IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
+        this.registerReceiver(new LocationReceiver(), intentFilter);
+
+
+        parameter.setIntentToBroadcastOnCompletion(broardcastIntent);
         // try GPS and fall back to NETWORK_PROVIDER
         parameter.setProviders(new String[] {LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER});
-        parameter.setTimeout(10000); // 10 sek
+        parameter.setTimeout(60000); // 1 minutes
         i.putExtras(bundle);
-        i.putExtra("user",username);
-        i.putExtra("home",home);
+
 
 
         pi=PendingIntent.getBroadcast(this, 0, i, 0);

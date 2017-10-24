@@ -17,6 +17,7 @@ package se2gce17.openhab_se2.cwac_loclpoll;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 /**
  * BroadcastReceiver to be launched by AlarmManager. Simply
@@ -56,6 +57,8 @@ public class LocationPoller extends BroadcastReceiver {
     */
 	@Override
 	public void onReceive(Context context, Intent intent) {
+
+		Log.e("LocationPuller", "onReceive!");
 		LocationPollerService.requestLocation(context, intent);
 	}
 	

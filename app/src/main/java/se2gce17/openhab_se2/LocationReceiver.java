@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -24,13 +25,12 @@ public class LocationReceiver  extends BroadcastReceiver {
 
     private Location home;
     private String username;
-    private OkHttpClient client;
-    private final String urlPath= "http://95.85.57.71:8080/NorthqGpsService/gps?";
+
 
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        Log.e("LocationReceiver","intent intent has been wakened");
+        Log.e("LocationReceiver","intent has been wakened");
         Bundle b=intent.getExtras();
 
         home = (Location) intent.getExtras().get("home");
@@ -58,24 +58,16 @@ public class LocationReceiver  extends BroadcastReceiver {
             msg="Invalid broadcast received!";
         }
 
+        sendLocationDataToWebsite(loc);
     }
 
 
     protected void sendLocationDataToWebsite(Location location) {
+        NetworkTask task = new NetworkTask();
+        Integer[] params = new Integer[]{Integer.valueOf(calcLocationProximity(home,location,100))};
 
-        try {
-            client = new OkHttpClient();
+        task.execute(params);
 
-            Request request = new Request.Builder()
-                    .url(urlPath+"user="+username+"&data="+calcLocationProximity(home,location,100))
-                    .build();
-
-            Response response = client.newCall(request).execute();
-            response.body().string();
-            Log.e(TAG, "-- sending location --- is close to home: "+calcLocationProximity(home,location,100));
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 
@@ -94,5 +86,30 @@ public class LocationReceiver  extends BroadcastReceiver {
         }
         return 0;
 
+    }
+
+    private class NetworkTask extends AsyncTask<Integer,Void,Void>{
+
+        private OkHttpClient client;
+        private final String urlPath= "http://95.85.57.71:8080/NorthqGpsService/gps?";
+
+
+        @Override
+        protected Void doInBackground(Integer... integers) {
+            try {
+                client = new OkHttpClient();
+
+                Request request = new Request.Builder()
+                        .url(urlPath+"user="+username+"&data="+integers[0])
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                response.body().string();
+                Log.e(TAG, "-- sending location --- is close to home: "+integers[0]);
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 }
