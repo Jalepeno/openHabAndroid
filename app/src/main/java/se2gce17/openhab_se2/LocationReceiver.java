@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SyncStatusObserver;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.util.prefs.Preferences;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -50,11 +52,21 @@ public class LocationReceiver  extends BroadcastReceiver {
 
         LocationPollerResult locationResult = new LocationPollerResult(b);
         final Location loc=locationResult.getLocation();
+        if(loc == null){
+            Log.e(TAG,"the current location i null");
+            return;
+        }
 
 
 
         Realm realm = Realm.getDefaultInstance();
         final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
+        if(openHABUser == null){
+            Log.e(TAG,"the user is null");
+        }
+
+
+
 
 
         realm.executeTransaction(new Realm.Transaction() {
@@ -85,11 +97,18 @@ public class LocationReceiver  extends BroadcastReceiver {
     protected void sendLocationDataToWebsite(Location location,OpenHABUser oHABuser) {
         // ex "1;anders_home" for user with name = anders and is currently within the range of his home
 
+       // int proximity = calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius());
+        int proximity = 1;
+        Log.d(TAG, "is close to "+oHABuser.getLastLocation().getDbName()+": "+proximity);
+        if(proximity == -1){ // error check, if current location or last location is null
+            return;
+        }
 
-        String data = ""+calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius())+";"+oHABuser.getLastLocation().getDbName();
-
+      //  String data = ""+proximity+";"+oHABuser.getLastLocation().getDbName();
+        String data = ""+proximity+";"+"Home";
         String encrypedData = encrypt(data);
-
+        Log.d(TAG,"data: "+ data);
+        Log.d(TAG,"encrypedData: "+encrypedData);
         String[] params = new String[]{oHABuser.getName(),oHABuser.getUser(),encrypedData};
 
         NetworkTask task = new NetworkTask();
@@ -174,6 +193,10 @@ public class LocationReceiver  extends BroadcastReceiver {
         Location lastLocation = new Location("");
         lastLocation.setLatitude(loc2.getLatitude());
         lastLocation.setLongitude(loc2.getLongitude());
+
+        if(loc1 == null || loc2 == null){
+            return -1;
+        }
 
         float distance = loc1.distanceTo(lastLocation);
         if ((int) distance <= distanceProx) {

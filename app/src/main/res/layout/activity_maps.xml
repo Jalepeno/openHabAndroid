@@ -27,13 +27,47 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/nav_header_height"
             android:background="#00B0FF"
-            android:gravity="bottom"
             android:orientation="vertical"
             android:paddingBottom="@dimen/activity_vertical_margin"
             android:paddingLeft="@dimen/activity_horizontal_margin"
             android:paddingRight="@dimen/activity_horizontal_margin"
             android:paddingTop="@dimen/activity_vertical_margin">
 
+            <ImageView
+                android:layout_gravity="top|right"
+                android:src="@drawable/ic_settings_white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+
+            <TextView
+                android:lines="1"
+                android:gravity="bottom"
+                android:layout_gravity="bottom"
+                android:id="@+id/drawer_user_tv"
+                android:textColor="#ffffff"
+                android:fontFamily="sans-serif"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="user"
+                android:textSize="18dp"/>
+
+            <TextView
+                android:lines="1"
+                android:gravity="bottom"
+                android:layout_gravity="bottom"
+                android:id="@+id/drawer_name_tv"
+                android:fontFamily="sans-serif-thin"
+                android:textColor="#FFFFFF"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Anders Andersen"
+                />
 
 
 
@@ -51,7 +85,7 @@
             tools:layout_editor_absoluteY="8dp"
             tools:layout_editor_absoluteX="8dp"
             android:paddingTop="8dp">
-
+<!--
             <android.support.design.widget.TextInputLayout
                 android:padding="8dp"
                 android:id="@+id/drawer_user_til"
@@ -79,6 +113,34 @@
                     android:layout_height="wrap_content"
                     android:hint="name"/>
             </android.support.design.widget.TextInputLayout>
+            -->
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:textSize="24dp"
+                    android:text="Start location Service"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <View
+                    android:visibility="invisible"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    />
+                <android.support.v7.widget.SwitchCompat
+                    android:id="@+id/drawer_service_switch"
+                    android:layout_gravity="right|center_vertical"
+                    android:gravity="right"
+                    android:enabled="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
 
             <LinearLayout
                 android:padding="8dp"
@@ -112,33 +174,20 @@
 
             </LinearLayout>
 
-            <LinearLayout
-                android:orientation="horizontal"
+            <ListView
+                android:id="@+id/drawer_location_list"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:padding="8dp">
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
 
-                <TextView
-                    android:textSize="24dp"
-                    android:text="Start location Service"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-                <View
-                    android:visibility="invisible"
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1"
-                    />
-                <android.support.v7.widget.SwitchCompat
-                    android:id="@+id/drawer_service_switch"
-                    android:layout_gravity="right|center_vertical"
-                    android:gravity="right"
-                    android:enabled="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
 
+            <ImageButton
+                android:layout_gravity="bottom|center_horizontal"
+                android:src="@drawable/ic_plus"
+                style="@style/Base.Widget.AppCompat.Button.Borderless"
+                android:gravity="bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
         </LinearLayout>
 

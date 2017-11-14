@@ -90,6 +90,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             homeImg.setImageResource(R.drawable.ic_home_red);
         } else {
             homeImg.setImageResource(R.drawable.ic_home_green);
+            if(userEt.getText().length() >2 && nameEt.getText().length() >2){
+                serviceSwitch.setEnabled(true);
+            }
         }
 
 
@@ -115,7 +118,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (home == null || userEt.getText().length() < 3 || nameEt.getText().length() < 3) {
                         serviceSwitch.setChecked(false);
                     } else {
-
                         startService();
                     }
                 } else {
@@ -132,8 +134,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         });
-
-
 
         if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
 
@@ -223,7 +223,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             home.setLocation(wrapper);
                             home.setId(0);
                             home.setName("Home");
-                            home.setDbName(nameEt.getText().toString().trim()+"_home");
+                            home.setDbName("Home");
                             home.setRadius(50); //TODO: make configurable
                             home.setImgResourceId(R.drawable.ic_home_green);
 
@@ -232,15 +232,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             user.setName(nameEt.getText().toString().trim());
                             user.setUser(userEt.getText().toString().trim());
                             user.setLastLocation(home);
-
-
-
                         }
                     });
-
-
-
-
                     homeImg.setImageResource(R.drawable.ic_home_green);
 
 //                    mMap.addMarker(new MarkerOptions().position(new LatLng(home.getLatitude(),home.getLongitude())).title("Home"));
@@ -346,7 +339,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // this will be the intent that the LocationReceiver will receive
         Intent broardcastIntent = new Intent(this, LocationReceiver.class);
 
-
         final String SOME_ACTION = "se2gce17.openhab_se2.LocationReceiver";
         IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
         this.registerReceiver(new LocationReceiver(), intentFilter);
@@ -407,7 +399,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
-        Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
+       // Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
         if(mMap != null){
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));

@@ -46,6 +46,7 @@
         <receiver android:name=".cwac_loclpoll.LocationPoller" />
         <service android:name=".cwac_loclpoll.LocationPollerService" />
         <receiver android:name=".LocationReceiver"/>
+
     </application>
 
 </manifest>
