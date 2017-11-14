@@ -14,7 +14,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
@@ -22,12 +21,10 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -40,8 +37,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
+import io.realm.Realm;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPoller;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
 
@@ -55,35 +52,86 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final int MY_PERMISSIONS_REQUEST_LOCATION = 123;
     private LocationRequest locationRequest;
     private SwitchCompat serviceSwitch;
-    private TextInputEditText usernameEt;
+    private TextInputEditText userEt;
+    private TextInputEditText nameEt;
     private ImageButton homeImg;
     private Location currentLocation;
-    private Location home;
+    private RealmLocationWrapper home;
 
     private Intent serviceIntent;
 
     private static final int PERIOD=60000; 	// 1 minute
     private PendingIntent pi=null;
     private AlarmManager mgr=null;
+    private Realm realm;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+
+
         serviceSwitch = (SwitchCompat) findViewById(R.id.drawer_service_switch);
-        usernameEt = (TextInputEditText) findViewById(R.id.drawer_username_et);
+        userEt = (TextInputEditText) findViewById(R.id.drawer_user_et);
+        nameEt = (TextInputEditText) findViewById(R.id.drawer_name_et);
         homeImg = (ImageButton) findViewById(R.id.mark_home_imgview);
         serviceSwitch.setEnabled(false);
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+
+        getDataFromDb();
+
         if (home == null) {
             homeImg.setImageResource(R.drawable.ic_home_red);
         } else {
             homeImg.setImageResource(R.drawable.ic_home_green);
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+
+        // click listener for home button
+        homeImg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(home == null){
+                    markCurrentLocationAsHome();
+                }else{
+
+                }
+            }
+        });
+
+        // event listener for switch
+        serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b) {
+                    // in case of home location has not been set, and username not set
+                    // we cannot start using service.
+                    if (home == null || userEt.getText().length() < 3 || nameEt.getText().length() < 3) {
+                        serviceSwitch.setChecked(false);
+                    } else {
+
+                        startService();
+                    }
+                } else {
+                    if (mgr != null) {
+                        mgr.cancel(pi);
+                        mgr = null;
+                        Toast
+                                .makeText(MapsActivity.this,
+                                        "Service cancelled",
+                                        Toast.LENGTH_LONG)
+                                .show();
+                    }
+
+                }
+            }
+        });
 
 
 
@@ -97,48 +145,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .addApi(LocationServices.API)
                         .build();
             }
-
-
-            // click listener for home button
-            homeImg.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if(home == null){
-                        markCurrentLocationAsHome();
-                    }else{
-
-                    }
-                }
-            });
-
-            // event listener for switch
-            serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                    if (b) {
-                        // in case of home location has not been set, and username not set
-                        // we cannot start using service.
-                        if (home == null || usernameEt.getText().length() < 3) {
-                            serviceSwitch.setChecked(false);
-                        } else {
-
-                            startService(usernameEt.getText().toString(), home);
-                        }
-                    } else {
-                        if (mgr != null) {
-                            mgr.cancel(pi);
-                            mgr = null;
-                            Toast
-                                    .makeText(MapsActivity.this,
-                                            "Service cancelled",
-                                            Toast.LENGTH_LONG)
-                                    .show();
-                        }
-
-                    }
-                }
-             });
         }
+
+
     }
 
 
@@ -189,6 +198,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     protected void onStop() {
+        if(mGoogleApiClient != null)
         mGoogleApiClient.disconnect();
         super.onStop();
     }
@@ -196,8 +206,41 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void markCurrentLocationAsHome() {
 
             if (mGoogleApiClient != null) {
-                home = currentLocation;
-                if(home != null){
+                if(home == null){
+                    realm = Realm.getDefaultInstance();
+                    realm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            RealmLocationWrapper wrapper = realm.createObject(RealmLocationWrapper.class);
+                            wrapper.setTime(currentLocation.getTime());
+                            wrapper.setLatitude(currentLocation.getLatitude());
+                            wrapper.setLongitude(currentLocation.getLongitude());
+                            home = wrapper;
+
+                            OpenHABLocation home = realm.createObject(OpenHABLocation.class);
+
+
+                            home.setLocation(wrapper);
+                            home.setId(0);
+                            home.setName("Home");
+                            home.setDbName(nameEt.getText().toString().trim()+"_home");
+                            home.setRadius(50); //TODO: make configurable
+                            home.setImgResourceId(R.drawable.ic_home_green);
+
+
+                            OpenHABUser user = realm.createObject(OpenHABUser.class);
+                            user.setName(nameEt.getText().toString().trim());
+                            user.setUser(userEt.getText().toString().trim());
+                            user.setLastLocation(home);
+
+
+
+                        }
+                    });
+
+
+
+
                     homeImg.setImageResource(R.drawable.ic_home_green);
 
 //                    mMap.addMarker(new MarkerOptions().position(new LatLng(home.getLatitude(),home.getLongitude())).title("Home"));
@@ -290,12 +333,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    /**
-     * starting wakeful service, that wakes up and asks for
-     * @param username
-     * @param home
-     */
-    public void startService(String username, Location home){
+
+    public void startService(){
         Log.e("Service","Starting service ");
         mgr=(AlarmManager)getSystemService(ALARM_SERVICE);
 
@@ -306,8 +345,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // this will be the intent that the LocationReceiver will receive
         Intent broardcastIntent = new Intent(this, LocationReceiver.class);
-        broardcastIntent.putExtra("user",username);
-        broardcastIntent.putExtra("home",home);
+
 
         final String SOME_ACTION = "se2gce17.openhab_se2.LocationReceiver";
         IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
@@ -375,4 +413,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
         }
     }
+
+    public void getDataFromDb() {
+        realm = Realm.getDefaultInstance();
+
+        OpenHABUser user = realm.where(OpenHABUser.class).findFirst();
+
+        if(user != null){
+            userEt.setText(user.getUser());
+            nameEt.setText(user.getName());
+
+        }
+        OpenHABLocation location = realm.where(OpenHABLocation.class).equalTo("id",0).findFirst();
+        if(location != null){
+            home = location.getLocation();
+        }
+    }
+
+
 }
