@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <LinearLayout
+        android:padding="8dp"
+        android:id="@+id/list_location_ll"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/list_location_name_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:fontFamily="sans-serif"
+            android:textColor="#d0000000"
+            android:textSize="24dp"
+            android:text="Location"/>
+
+        <View
+            android:visibility="invisible"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+
+            android:background="#ffffff"
+            android:id="@+id/list_location_iv"
+            android:layout_gravity="right"
+            android:src="@drawable/ic_menu_camera"
+            android:padding="0dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp" />
+
+
+    </LinearLayout>
+</android.support.constraint.ConstraintLayout>
