@@ -128,6 +128,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        addLocationBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startLocationDialog();
+            }
+        });
+
         settingsIv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -194,6 +201,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findViewById(R.id.change_user_et);
         final Button okBtn = (Button) promptsView.findViewById(R.id.change_user_ok_btn);
         final Button cancelBtn = (Button) promptsView.findViewById(R.id.change_user_cancel_btn);
+//        okBtn.setEnabled(false);
+
+//        View.OnFocusChangeListener focusListener = new View.OnFocusChangeListener() {
+//            @Override
+//            public void onFocusChange(View view, boolean b) {
+//                if (settingNameEt.getText().length() > 2 && settingUserEt.getText().length() > 2) {
+//                    okBtn.setEnabled(true);
+//                } else {
+//                    okBtn.setEnabled(false);
+//                }
+//            }
+//        };
+//        okBtn.setOnFocusChangeListener(focusListener);
+
+
 
         // create alert dialog
         final AlertDialog alertDialog = alertDialogBuilder.create();
@@ -201,6 +223,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         okBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        if(user == null){
+                            user = realm.createObject(OpenHABUser.class);
+                        }else{
+                            user = realm.where(OpenHABUser.class).findFirst();
+                        }
+                        user.setUser(settingUserEt.getText().toString());
+                        user.setName(settingNameEt.getText().toString());
+                    }
+                });
+                userTv.setText(user.getUser());
+                nameTv.setText(user.getName());
+
                 alertDialog.dismiss();
             }
         });
@@ -208,19 +245,94 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                user.setUser(settingUserEt.getText().toString());
-                user.setName(settingNameEt.getText().toString());
-                userTv.setText(user.getName());
-                nameTv.setText(user.getName());
-                userTv.invalidate();
-                nameTv.invalidate();
-
                 alertDialog.dismiss();
             }
         });
         // show it
         alertDialog.show();
     }
+
+    private void startLocationDialog(){
+        LayoutInflater li = LayoutInflater.from(this);
+        View promptsView = li.inflate(R.layout.new_location_setup, null);
+
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        final TextInputEditText locationName = (TextInputEditText) promptsView.findViewById(R.id.new_location_name_et);
+        final TextInputEditText locationRadius = (TextInputEditText) promptsView.findViewById(R.id.new_location_radius_et);
+
+        final Button cancelBtn = (Button) promptsView.findViewById(R.id.new_location_cancel_brn);
+        final Button markBtn = (Button) promptsView.findViewById(R.id.new_location_mark_btn);
+
+        final AlertDialog alertDialog = alertDialogBuilder.create();
+
+        cancelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+            }
+        });
+
+        markBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (locationName.getText().length() > 2 && locationRadius.getText().length() > 0) {
+
+                    realm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            int locationId = 1;
+                            RealmResults<OpenHABLocation> existingLocations = realm.where(OpenHABLocation.class).findAll();
+                            for (OpenHABLocation l : existingLocations) {
+                                if (l.getId() > locationId) {
+                                    locationId = l.getId();
+                                }
+                            }
+                            locationId++;
+
+                            OpenHABLocation newLocation = realm.createObject(OpenHABLocation.class);
+
+                            RealmLocationWrapper wrapLocation = realm.createObject(RealmLocationWrapper.class);
+                            wrapLocation.setLatitude(currentLocation.getLatitude());
+                            wrapLocation.setLongitude(currentLocation.getLongitude());
+                            wrapLocation.setTime(System.currentTimeMillis());
+
+                            newLocation.setId(locationId);
+                            newLocation.setRadius(Integer.valueOf(locationRadius.getText().toString()));
+                            newLocation.setName(locationName.getText().toString());
+                            newLocation.setDbName(user.getName() + "_" + locationName.getText().toString());
+                            newLocation.setLocation(wrapLocation);
+                        }
+                    });
+                }
+                updateLocations();
+                alertDialog.dismiss();
+            }
+        });
+        alertDialog.show();
+    }
+
+    private void updateLocations() {
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                RealmResults<OpenHABLocation> foundLocations = realm.where(OpenHABLocation.class).findAll();
+
+                locations.clear();
+                for(OpenHABLocation l : foundLocations){
+                    if(l.getId()>0){
+                        locations.add(l);
+                    }
+                }
+
+            }
+        });
+        locationLl.invalidate();
+    }
+
 
     private void setupListView() {
         adapter = new LocationListAdapter(this,R.layout.location_list_layout);
@@ -486,29 +598,35 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void getDataFromDb() {
         realm = Realm.getDefaultInstance();
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                user = realm.where(OpenHABUser.class).findFirst();
+                if(user == null){
+                        user = realm.createObject(OpenHABUser.class);
+                }
+                if(user.getUser() != null){
+                    userTv.setText(user.getUser());
+                }
+                if(user.getName() != null){
+                    nameTv.setText(user.getName());
+                }
 
-       user = realm.where(OpenHABUser.class).findFirst();
+                OpenHABLocation location = realm.where(OpenHABLocation.class).equalTo("id",0).findFirst();
+                if(location != null){
+                    home = location.getLocation();
+                }
 
-
-        if(user != null){
-            userTv.setText(user.getUser());
-            nameTv.setText(user.getName());
-
-        }else{
-            user = new OpenHABUser();
-        }
-        OpenHABLocation location = realm.where(OpenHABLocation.class).equalTo("id",0).findFirst();
-        if(location != null){
-            home = location.getLocation();
-        }
-
-        RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
-        locations  = new ArrayList<>();
-        for(OpenHABLocation l : results){
-            if(l.getId()>0){// id of home is 0, which we don't want to add here
-                locations.add(l);
+                RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
+                locations  = new ArrayList<>();
+                for(OpenHABLocation l : results){
+                    if(l.getId()>0){// id of home is 0, which we don't want to add here
+                        locations.add(l);
+                    }
+                }
             }
-        }
+        });
+
     }
 
 

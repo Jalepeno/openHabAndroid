@@ -52,21 +52,22 @@
                 android:layout_gravity="bottom"
                 android:id="@+id/drawer_user_tv"
                 android:textColor="#ffffff"
-                android:fontFamily="sans-serif"
+                android:fontFamily="sans-serif-thin"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="user"
-                android:textSize="18dp"/>
+                android:textSize="20dp"/>
 
             <TextView
                 android:lines="1"
                 android:gravity="bottom"
                 android:layout_gravity="bottom"
                 android:id="@+id/drawer_name_tv"
-                android:fontFamily="sans-serif-thin"
+                android:fontFamily="sans-serif"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="20dp"
                 android:hint="name"
                 />
 
