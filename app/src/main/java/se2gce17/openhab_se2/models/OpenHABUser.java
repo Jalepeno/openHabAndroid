@@ -1,7 +1,7 @@
-package se2gce17.openhab_se2;
+package se2gce17.openhab_se2.models;
 
-import io.realm.annotations.PrimaryKey;
 import io.realm.annotations.RealmClass;
+
 
 /**
  * Created by Nicolaj Pedersen on 11-11-2017.
@@ -30,7 +30,6 @@ public class OpenHABUser implements io.realm.RealmModel {
     public void setUser(String user) {
         this.user = user;
     }
-
     public OpenHABLocation getLastLocation() {
         return lastLocation;
     }
@@ -38,4 +37,5 @@ public class OpenHABUser implements io.realm.RealmModel {
     public void setLastLocation(OpenHABLocation lastLocation) {
         this.lastLocation = lastLocation;
     }
+
 }

@@ -13,6 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import se2gce17.openhab_se2.models.OpenHABLocation;
+import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,5 +91,9 @@ public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
         }
         return 0;
 
+    }
+
+    public void serCurrentLocation(Location location) {
+        currentLocation = location;
     }
 }

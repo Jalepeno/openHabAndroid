@@ -45,12 +45,18 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
+
+
 import java.util.ArrayList;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPoller;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
+
+import se2gce17.openhab_se2.models.OpenHABLocation;
+import se2gce17.openhab_se2.models.OpenHABUser;
+import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -77,11 +83,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private Intent serviceIntent;
 
-    private static final int PERIOD=60000; 	// 1 minute
+    private static final int PERIOD = 60000; 	// 1 minute
     private PendingIntent pi=null;
     private AlarmManager mgr=null;
     private Realm realm;
-    private  OpenHABUser user;
+    private OpenHABUser user;
     private ArrayList<OpenHABLocation> locations;
 
 
@@ -89,7 +95,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
 
         userEditIv = (ImageView) findViewById(R.id.drawer_account_iv);
         settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);
@@ -100,10 +105,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationLl = (ListView) findViewById(R.id.drawer_location_list);
         addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
+
         serviceSwitch.setEnabled(false);
         userEditIv.setClickable(true);
         settingsIv.setClickable(true);
-
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -123,8 +128,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         setViewListeners();
-
-
         if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
 
             // google client setup
@@ -190,15 +193,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         startService();
                     }
                 } else {
-                    if (mgr != null) {
-                        mgr.cancel(pi);
-                        mgr = null;
-                        Toast
-                                .makeText(MapsActivity.this,
-                                        "Service cancelled",
-                                        Toast.LENGTH_LONG)
-                                .show();
-                    }
+                    stopService();
+                    Toast.makeText(MapsActivity.this,
+                                    "Service cancelled",
+                            Toast.LENGTH_LONG)
+                            .show();
+
 
                 }
             }
@@ -238,8 +238,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         realm.delete(OpenHABLocation.class);
                         locations.clear();
                         adapter.setLocations(locations);
+                        adapter.notifyDataSetInvalidated();
                         locationLl.invalidate();
+                        homeBackground.setBackgroundResource(R.color.white_solid);
                         home = null;
+                        stopService();
+                        serviceSwitch.setChecked(false);
+                        serviceSwitch.setEnabled(false);
+
                     }
                 });
             }
@@ -253,6 +259,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void execute(Realm realm) {
                         realm.delete(OpenHABUser.class);
                         user = null;
+                        nameTv.setText("");
+                        userTv.setText("");
+                        stopService();
+                        serviceSwitch.setChecked(false);
+                        serviceSwitch.setEnabled(false);
+
                     }
                 });
             }
@@ -690,7 +702,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .show();
     }
 
+    public void stopService(){
+        if (mgr != null) {
+            mgr.cancel(pi);
+            mgr = null;
 
+        }
+    }
 
 
     @Override
@@ -724,6 +742,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
+        adapter.serCurrentLocation(location);
         if(home != null) {
             if (Utils.calcLocationProximity(location, home, 50) == 1) {
                 homeBackground.setBackgroundResource(R.color.orange500);
@@ -732,6 +751,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 homeBackground.setBackgroundResource(R.color.white_solid);
             }
         }
+        adapter.notifyDataSetInvalidated();
+        locationLl.invalidate();
+
         Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
         if(mMap != null){

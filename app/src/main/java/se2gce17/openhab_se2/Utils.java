@@ -2,6 +2,8 @@ package se2gce17.openhab_se2;
 
 import android.location.Location;
 
+import se2gce17.openhab_se2.models.RealmLocationWrapper;
+
 /**
  * Created by Nicolaj Pedersen on 21-11-2017.
  */

@@ -180,13 +180,13 @@
                     />
 
                 <ImageButton
-                    android:background="#ffffff"
                     android:id="@+id/mark_home_imgview"
-                    android:layout_gravity="right"
-                    android:src="@drawable/ic_menu_camera"
-                    android:padding="0dp"
                     android:layout_width="48dp"
-                    android:layout_height="48dp" />
+                    android:layout_height="48dp"
+                    android:layout_gravity="right"
+                    android:background="#00ffffff"
+                    android:padding="0dp"
+                    android:src="@drawable/ic_menu_camera" />
 
 
             </LinearLayout>

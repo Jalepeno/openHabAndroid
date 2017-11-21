@@ -31,8 +31,6 @@
             />
 
         <ImageView
-
-            android:background="#ffffff"
             android:id="@+id/list_location_iv"
             android:layout_gravity="right"
             android:src="@drawable/ic_menu_camera"

@@ -1,7 +1,5 @@
-package se2gce17.openhab_se2;
+package se2gce17.openhab_se2.models;
 
-
-import io.realm.annotations.PrimaryKey;
 import io.realm.annotations.RealmClass;
 
 /**

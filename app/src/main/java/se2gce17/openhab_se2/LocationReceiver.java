@@ -27,6 +27,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerResult;
+import se2gce17.openhab_se2.models.OpenHABLocation;
+import se2gce17.openhab_se2.models.OpenHABUser;
 
 import static android.content.ContentValues.TAG;
 import static android.util.Base64.DEFAULT;
@@ -59,6 +61,7 @@ public class LocationReceiver  extends BroadcastReceiver {
         final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
         if(openHABUser == null){
             Log.e(TAG,"the user is null");
+            return;
         }
 
 
@@ -75,7 +78,13 @@ public class LocationReceiver  extends BroadcastReceiver {
                 for(OpenHABLocation l : results){
                     if(Utils.calcLocationProximity(loc,l.getLocation(),l.getRadius())==1){
                         openHABUser.setLastLocation(l);
+                        // in case of overlapping locations, the first will get picked.
+                        // this is to prioritize the home location (index 0)
+                        break;
                     }
+                }
+                if(openHABUser == null){
+                    return;
                 }
                 if(openHABUser.getLastLocation() == null){
                     openHABUser.setLastLocation(results.get(0));
@@ -100,7 +109,7 @@ public class LocationReceiver  extends BroadcastReceiver {
 
         int proximity = Utils.calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius());
         // int proximity = 1;
-        Log.d(TAG, "is close to "+oHABuser.getLastLocation().getDbName()+": "+proximity);
+        Log.d(TAG, "is close to "+oHABuser.getLastLocation().getDbName()+": "+proximity+ "  --  location id:"+oHABuser.getLastLocation().getId());
         if(proximity == -1){ // error check, if current location or last location is null
             return;
         }
