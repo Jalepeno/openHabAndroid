@@ -25,15 +25,22 @@ public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
     private Context context;
     private ArrayList<OpenHABLocation> locations;
     private Location currentLocation;
-
-
+    int viewResource;
 
     public LocationListAdapter(@NonNull Context context, int resource) {
         super(context, resource);
+        this.context = context;
+        this.viewResource = resource;
     }
+
 
     public void setLocations(ArrayList<OpenHABLocation> locations) {
         this.locations = locations;
+    }
+
+    @Override
+    public int getCount() {
+        return locations.size();
     }
 
     @NonNull
@@ -64,10 +71,6 @@ public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
 
 
         return rowView;
-
-
-
-
     }
 
     private int calcLocationProximity( RealmLocationWrapper loc2, int distanceProx) {

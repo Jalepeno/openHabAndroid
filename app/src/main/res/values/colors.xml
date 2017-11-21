@@ -5,4 +5,7 @@
     <color name="colorAccent">#FF4081</color>
     <color name="orange500">#FF9800</color>
     <color name="white_solid">#FFFFFF</color>
+    <color name="black_text_main">#DE000000</color>
+    <color name="black_text_secondary">#89000000</color>
+    <color name="divider">#1E000000</color>
 </resources>

@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.Image;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -28,6 +29,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,10 +58,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
+    private boolean showingDialog = false;
 
     private final int MY_PERMISSIONS_REQUEST_LOCATION = 123;
     private LocationRequest locationRequest;
     private SwitchCompat serviceSwitch;
+    private ImageView userEditIv;
     private ImageView settingsIv;
     private TextView userTv;
     private TextView nameTv;
@@ -69,6 +73,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private RealmLocationWrapper home;
     private ListView locationLl;
     private LocationListAdapter adapter;
+    private LinearLayout homeBackground;
 
     private Intent serviceIntent;
 
@@ -86,6 +91,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
 
 
+        userEditIv = (ImageView) findViewById(R.id.drawer_account_iv);
         settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);
         serviceSwitch = (SwitchCompat) findViewById(R.id.drawer_service_switch);
         userTv = (TextView) findViewById(R.id.drawer_user_tv);
@@ -93,7 +99,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         homeImg = (ImageButton) findViewById(R.id.mark_home_imgview);
         locationLl = (ListView) findViewById(R.id.drawer_location_list);
         addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
+        homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         serviceSwitch.setEnabled(false);
+        userEditIv.setClickable(true);
         settingsIv.setClickable(true);
 
 
@@ -103,7 +111,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
 
         getDataFromDb();
-
         setupListView();
 
         if (home == null) {
@@ -115,6 +122,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
 
+        setViewListeners();
+
+
+        if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
+
+            // google client setup
+            if (mGoogleApiClient == null) {
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
+            }
+        }
+
+
+    }
+
+
+
+    private void setViewListeners() {
 
         // click listener for home button
         homeImg.setOnClickListener(new View.OnClickListener() {
@@ -132,6 +160,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 startLocationDialog();
+            }
+        });
+
+        userEditIv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startEditUserDialog();
             }
         });
 
@@ -169,22 +204,82 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
-
-            // google client setup
-            if (mGoogleApiClient == null) {
-                mGoogleApiClient = new GoogleApiClient.Builder(this)
-                        .addConnectionCallbacks(this)
-                        .addOnConnectionFailedListener(this)
-                        .addApi(LocationServices.API)
-                        .build();
-            }
-        }
-
-
     }
 
     private void startSettingsDialog() {
+        if(showingDialog){
+            return;
+        }
+        LayoutInflater li = LayoutInflater.from(this);
+        View promptsView = li.inflate(R.layout.settings_dialog, null);
+
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        final TextView urlTv = promptsView.findViewById(R.id.settings_url_tv);
+        final Button clearLocDbBtn = promptsView.findViewById(R.id.settings_clear_location_db_btn);
+        final Button clearUserDbBtn = promptsView.findViewById(R.id.settings_clear_user_db_btn);
+        final Button doneBtn = promptsView.findViewById(R.id.settings_done_btn);
+        urlTv.setText(Utils.url);
+
+
+        final AlertDialog alertDialog = alertDialogBuilder.create();
+
+        clearLocDbBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+
+                        realm.delete(OpenHABLocation.class);
+                        locations.clear();
+                        adapter.setLocations(locations);
+                        locationLl.invalidate();
+                        home = null;
+                    }
+                });
+            }
+        });
+
+        clearUserDbBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        realm.delete(OpenHABUser.class);
+                        user = null;
+                    }
+                });
+            }
+        });
+
+        doneBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                showingDialog = false;
+            }
+        });
+        showingDialog = true;
+        // show it
+        alertDialog.show();
+    }
+
+    private void startEditUserDialog() {
+        if(showingDialog){
+            return;
+        }
         LayoutInflater li = LayoutInflater.from(this);
         View promptsView = li.inflate(R.layout.change_user_diaog, null);
 
@@ -223,6 +318,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         okBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(settingUserEt.getText().length() < 2 ||settingNameEt.getText().length() < 2){
+                    return;
+                }
                 realm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
@@ -248,11 +346,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 alertDialog.dismiss();
             }
         });
+
+        alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                showingDialog = false;
+            }
+        });
+        showingDialog = true;
         // show it
         alertDialog.show();
     }
 
     private void startLocationDialog(){
+        if(showingDialog){
+            return;
+        }
         LayoutInflater li = LayoutInflater.from(this);
         View promptsView = li.inflate(R.layout.new_location_setup, null);
 
@@ -279,6 +388,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         markBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(currentLocation == null){
+                    Toast.makeText(MapsActivity.this,
+                            "Location data not found",
+                            Toast.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
                 if (locationName.getText().length() > 2 && locationRadius.getText().length() > 0) {
 
                     realm.executeTransaction(new Realm.Transaction() {
@@ -312,6 +428,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 alertDialog.dismiss();
             }
         });
+        alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                showingDialog = false;
+            }
+        });
+        showingDialog = true;
         alertDialog.show();
     }
 
@@ -330,16 +453,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
-        locationLl.invalidate();
-    }
+        adapter.setLocations(locations);
+        adapter.notifyDataSetInvalidated();
 
+    }
 
     private void setupListView() {
         adapter = new LocationListAdapter(this,R.layout.location_list_layout);
         adapter.setLocations(locations);
         locationLl.setAdapter(adapter);
+        locationLl.invalidate();
     }
-
 
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this,
@@ -394,13 +518,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void markCurrentLocationAsHome() {
+            if(currentLocation == null){
+                Toast
+                        .makeText(this,
+                                "Location data not found",
+                                Toast.LENGTH_SHORT)
+                        .show();
+                return;
 
+            }
             if (mGoogleApiClient != null) {
                 if(home == null){
                     realm = Realm.getDefaultInstance();
                     realm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(Realm realm) {
+
                             RealmLocationWrapper wrapper = realm.createObject(RealmLocationWrapper.class);
                             wrapper.setTime(currentLocation.getTime());
                             wrapper.setLatitude(currentLocation.getLatitude());
@@ -516,7 +649,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
+    /**
+     * starts the wakeful intent service
+     */
     public void startService(){
         Log.e("Service","Starting service ");
         mgr=(AlarmManager)getSystemService(ALARM_SERVICE);
@@ -561,8 +696,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         locationRequest = LocationRequest.create();
-        locationRequest.setInterval(1000); // milliseconds
-        locationRequest.setFastestInterval(1000); // the fastest rate in milliseconds at which your app can handle location updates
+        locationRequest.setInterval(10000); // milliseconds
+        locationRequest.setFastestInterval(5000); // the fastest rate in milliseconds at which your app can handle location updates
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         if(checkLocationPermission()){
             LocationServices.FusedLocationApi.requestLocationUpdates(
@@ -589,13 +724,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
-       // Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
+        if(home != null) {
+            if (Utils.calcLocationProximity(location, home, 50) == 1) {
+                homeBackground.setBackgroundResource(R.color.orange500);
+
+            } else {
+                homeBackground.setBackgroundResource(R.color.white_solid);
+            }
+        }
+        Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
         if(mMap != null){
             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
         }
     }
 
+    /**
+     * connectes to the Realm database and fetches the data
+     */
     public void getDataFromDb() {
         realm = Realm.getDefaultInstance();
         realm.executeTransaction(new Realm.Transaction() {
@@ -621,6 +767,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 locations  = new ArrayList<>();
                 for(OpenHABLocation l : results){
                     if(l.getId()>0){// id of home is 0, which we don't want to add here
+                        System.out.println("location found: "+l.getName());
                         locations.add(l);
                     }
                 }

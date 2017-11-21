@@ -33,18 +33,32 @@
             android:paddingRight="@dimen/activity_horizontal_margin"
             android:paddingTop="@dimen/activity_vertical_margin">
 
-            <ImageView
-                android:id="@+id/drawer_settings_iv"
-                android:layout_gravity="top|right"
-                android:src="@drawable/ic_settings_white"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right">
+
+                <ImageView
+                    android:id="@+id/drawer_account_iv"
+                    android:src="@drawable/ic_user"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="8dp"/>
+
+
+                <ImageView
+                    android:id="@+id/drawer_settings_iv"
+                    android:src="@drawable/ic_settings_white"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
 
             <View
+                android:visibility="invisible"
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
                 android:layout_weight="1"/>
-
 
             <TextView
                 android:lines="1"
@@ -70,8 +84,6 @@
                 android:textSize="20dp"
                 android:hint="name"
                 />
-
-
 
 
         </LinearLayout>
@@ -125,7 +137,8 @@
                 android:padding="8dp">
 
                 <TextView
-                    android:textSize="24dp"
+                    android:textColor="@color/black_text_main"
+                    android:textSize="18dp"
                     android:text="Start location Service"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
@@ -145,16 +158,18 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/drawer_home_location_ll"
                 android:padding="8dp"
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:textColor="@color/black_text_main"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
-                    android:textSize="24dp"
+                    android:textSize="18dp"
                     android:text="Home"/>
 
                 <View
@@ -176,12 +191,25 @@
 
             </LinearLayout>
 
+            <View
+                android:visibility="visible"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                />
+
             <ListView
                 android:id="@+id/drawer_location_list"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"/>
-
+                android:layout_weight="1"
+                android:divider="@color/white_solid"/>
+            <View
+                android:visibility="visible"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                />
 
             <ImageButton
                 android:id="@+id/drawer_add_location_btn"

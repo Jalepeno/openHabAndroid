@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SyncStatusObserver;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.util.prefs.Preferences;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -57,8 +55,6 @@ public class LocationReceiver  extends BroadcastReceiver {
             return;
         }
 
-
-
         Realm realm = Realm.getDefaultInstance();
         final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
         if(openHABUser == null){
@@ -77,10 +73,15 @@ public class LocationReceiver  extends BroadcastReceiver {
                 RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
 
                 for(OpenHABLocation l : results){
-                    if(calcLocationProximity(loc,l.getLocation(),l.getRadius())==1){
+                    if(Utils.calcLocationProximity(loc,l.getLocation(),l.getRadius())==1){
                         openHABUser.setLastLocation(l);
                     }
                 }
+                if(openHABUser.getLastLocation() == null){
+                    openHABUser.setLastLocation(results.get(0));
+                }
+
+                sendLocationDataToWebsite(loc,openHABUser);
             }
         });
 
@@ -90,22 +91,22 @@ public class LocationReceiver  extends BroadcastReceiver {
         name = intent.getExtras().getString("username");
      */
 
-        sendLocationDataToWebsite(loc,openHABUser);
+
     }
 
 
     protected void sendLocationDataToWebsite(Location location,OpenHABUser oHABuser) {
         // ex "1;anders_home" for user with name = anders and is currently within the range of his home
 
-       // int proximity = calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius());
-        int proximity = 1;
+        int proximity = Utils.calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius());
+        // int proximity = 1;
         Log.d(TAG, "is close to "+oHABuser.getLastLocation().getDbName()+": "+proximity);
         if(proximity == -1){ // error check, if current location or last location is null
             return;
         }
 
-      //  String data = ""+proximity+";"+oHABuser.getLastLocation().getDbName();
-        String data = ""+proximity+";"+"Home";
+        String data = ""+proximity+";"+oHABuser.getLastLocation().getDbName();
+       // String data = ""+proximity+";"+"Home";
         String encrypedData = encrypt(data);
         Log.d(TAG,"data: "+ data);
         Log.d(TAG,"encrypedData: "+encrypedData);
@@ -181,30 +182,7 @@ public class LocationReceiver  extends BroadcastReceiver {
     }
 
 
-    /**
-     *
-     * @param loc1
-     * @param loc2
-     * @param distanceProx proimity in meters must be >= 0
-     * @return returns 1 in locations are within proximity of eachotther, else return 0;
-     */
-    private int calcLocationProximity(Location loc1, RealmLocationWrapper loc2, int distanceProx) {
 
-        Location lastLocation = new Location("");
-        lastLocation.setLatitude(loc2.getLatitude());
-        lastLocation.setLongitude(loc2.getLongitude());
-
-        if(loc1 == null || loc2 == null){
-            return -1;
-        }
-
-        float distance = loc1.distanceTo(lastLocation);
-        if ((int) distance <= distanceProx) {
-            return 1;
-        }
-        return 0;
-
-    }
 
     private class NetworkTask extends AsyncTask<String,Void,Void>{
 
@@ -226,7 +204,7 @@ public class LocationReceiver  extends BroadcastReceiver {
                         .build();
 
                 Response response = client.newCall(request).execute();
-                response.body().string();
+                //response.body().string();
 
                 Log.e(TAG,"-- sending location -- "+"user="+strings[1]+"&name="+strings[0]);
             }catch (IOException e) {
