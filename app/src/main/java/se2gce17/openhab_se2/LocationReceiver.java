@@ -27,6 +27,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerResult;
+import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABLocation;
 import se2gce17.openhab_se2.models.OpenHABUser;
 
@@ -37,7 +38,7 @@ import static android.util.Base64.DEFAULT;
  * Created by Nicolaj Pedersen on 23-10-2017.
  */
 
-public class LocationReceiver  extends BroadcastReceiver {
+public class LocationReceiver extends BroadcastReceiver {
 
     private Location home;
     private String user;
@@ -47,25 +48,22 @@ public class LocationReceiver  extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        Log.e("LocationReceiver","intent has been wakened");
-        Bundle b=intent.getExtras();
+        Log.e("LocationReceiver", "intent has been wakened");
+        Bundle b = intent.getExtras();
 
         LocationPollerResult locationResult = new LocationPollerResult(b);
-        final Location loc=locationResult.getLocation();
-        if(loc == null){
-            Log.e(TAG,"the current location i null");
+        final Location loc = locationResult.getLocation();
+        if (loc == null) {
+            Log.e(TAG, "the current location i null");
             return;
         }
 
         Realm realm = Realm.getDefaultInstance();
         final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
-        if(openHABUser == null){
-            Log.e(TAG,"the user is null");
+        if (openHABUser == null) {
+            Log.e(TAG, "the user is null");
             return;
         }
-
-
-
 
 
         realm.executeTransaction(new Realm.Transaction() {
@@ -75,22 +73,22 @@ public class LocationReceiver  extends BroadcastReceiver {
 
                 RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
 
-                for(OpenHABLocation l : results){
-                    if(Utils.calcLocationProximity(loc,l.getLocation(),l.getRadius())==1){
+                for (OpenHABLocation l : results) {
+                    if (Utils.calcLocationProximity(loc, l.getLocation(), l.getRadius()) == 1) {
                         openHABUser.setLastLocation(l);
                         // in case of overlapping locations, the first will get picked.
                         // this is to prioritize the home location (index 0)
                         break;
                     }
                 }
-                if(openHABUser == null){
+                if (openHABUser == null) {
                     return;
                 }
-                if(openHABUser.getLastLocation() == null){
+                if (openHABUser.getLastLocation() == null) {
                     openHABUser.setLastLocation(results.get(0));
                 }
 
-                sendLocationDataToWebsite(loc,openHABUser);
+                sendLocationDataToWebsite(loc, openHABUser);
             }
         });
 
@@ -104,121 +102,69 @@ public class LocationReceiver  extends BroadcastReceiver {
     }
 
 
-    protected void sendLocationDataToWebsite(Location location,OpenHABUser oHABuser) {
+    protected void sendLocationDataToWebsite(Location location, OpenHABUser oHABuser) {
         // ex "1;anders_home" for user with name = anders and is currently within the range of his home
 
-        int proximity = Utils.calcLocationProximity(location,oHABuser.getLastLocation().getLocation(),oHABuser.getLastLocation().getRadius());
+        int proximity = Utils.calcLocationProximity(location, oHABuser.getLastLocation().getLocation(), oHABuser.getLastLocation().getRadius());
         // int proximity = 1;
-        Log.d(TAG, "is close to "+oHABuser.getLastLocation().getDbName()+": "+proximity+ "  --  location id:"+oHABuser.getLastLocation().getId());
-        if(proximity == -1){ // error check, if current location or last location is null
+        Log.d(TAG, "is close to " + oHABuser.getLastLocation().getDbName() + ": " + proximity + "  --  location id:" + oHABuser.getLastLocation().getId());
+        if (proximity == -1) { // error check, if current location or last location is null
             return;
         }
 
-        String data = ""+proximity+";"+oHABuser.getLastLocation().getDbName();
-       // String data = ""+proximity+";"+"Home";
-        String encrypedData = encrypt(data);
-        Log.d(TAG,"data: "+ data);
-        Log.d(TAG,"encrypedData: "+encrypedData);
-        String[] params = new String[]{oHABuser.getName(),oHABuser.getUser(),encrypedData};
+        String data = "" + proximity + ";" + oHABuser.getLastLocation().getDbName();
+        // String data = ""+proximity+";"+"Home";
+        String encrypedData = Utils.encrypt(data);
 
         NetworkTask task = new NetworkTask();
 
 
-    //    Integer[] params = new Integer[]{Integer.valueOf(calcLocationProximity(home,location,100))};
+        //    Integer[] params = new Integer[]{Integer.valueOf(calcLocationProximity(home,location,100))};
 
-        task.execute(params);
+        task.execute(oHABuser.getUser(), encrypedData);
 
-    }
-
-    private final byte[] keyValue = "Beercalc12DTU123".getBytes();
-
-    // Generates a key
-    private Key generateKey() {
-        Key key = new SecretKeySpec(keyValue, "AES");
-        return key;
-    }
-
-    @TargetApi(11)
-    public String encrypt(String plainText) {
-        try {
-            Cipher AesCipher = Cipher.getInstance("AES");
-            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey());
-
-
-            return new String(Base64.encode(AesCipher.doFinal(plainText.getBytes()),DEFAULT));
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @TargetApi(11)
-    public String decrypt(String cipherText){
-        try {
-            Cipher AesCipher;
-            AesCipher = Cipher.getInstance("AES");
-            AesCipher.init(Cipher.DECRYPT_MODE, generateKey());
-            System.out.println(AesCipher.doFinal(Base64.decode(cipherText.getBytes(),DEFAULT)).length);
-
-            return new String(AesCipher.doFinal(Base64.decode(cipherText.getBytes(),DEFAULT)));
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
     }
 
 
 
 
-    private class NetworkTask extends AsyncTask<String,Void,Void>{
+    private class NetworkTask extends AsyncTask<String, Void, Void> {
 
         private OkHttpClient client;
-        private final String urlPath= "http://95.85.57.71:8080/NorthqGpsService/gps?";
 
 
         @Override
-        protected Void doInBackground(String... strings) {
-            try {
-                client = new OkHttpClient();
-                // params
-                // 0 = name;
-                // 1 = user;
-                // 2 = data(encrypted)
+        protected Void doInBackground(final String... strings) {
+            Realm realm = Realm.getDefaultInstance();
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
+                    client = new OkHttpClient();
+                    final String user = strings[0];
+                    final String data = strings[1];
+                    // params
+                    // 0 = name;
+                    // 1 = user;
+                    // 2 = data(encrypted)
 
-                Request request = new Request.Builder()
-                        .url(urlPath+"user="+strings[1]+"&name="+strings[0]+"&data="+strings[2])
-                        .build();
+                    try {
+                        Request request = new Request.Builder()
+                                .url(config.getUrl() + "user=" + user+  "&data=" + data)
+                                .build();
 
-                Response response = client.newCall(request).execute();
-                //response.body().string();
+                        Response response = client.newCall(request).execute();
 
-                Log.e(TAG,"-- sending location -- "+"user="+strings[1]+"&name="+strings[0]);
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
+                        //response.body().string();
+
+                        Log.e(TAG, "-- sending location -- " + "user=" + strings[0]);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+
             return null;
         }
     }

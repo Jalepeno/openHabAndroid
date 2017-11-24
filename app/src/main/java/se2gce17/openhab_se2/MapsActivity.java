@@ -9,7 +9,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.Image;
+import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,6 +31,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,14 +47,18 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
 
-
+import java.io.IOException;
 import java.util.ArrayList;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPoller;
 import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
 
+import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABLocation;
 import se2gce17.openhab_se2.models.OpenHABUser;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
@@ -72,14 +77,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageView userEditIv;
     private ImageView settingsIv;
     private TextView userTv;
-    private TextView nameTv;
-    private ImageButton homeImg;
+    private ImageView homeImg;
     private ImageButton addLocationBtn;
     private Location currentLocation;
     private RealmLocationWrapper home;
     private ListView locationLl;
     private LocationListAdapter adapter;
     private LinearLayout homeBackground;
+    private ProgressBar getHomeProgress;
 
     private Intent serviceIntent;
 
@@ -89,6 +94,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Realm realm;
     private OpenHABUser user;
     private ArrayList<OpenHABLocation> locations;
+    private static OpenHABConfig config;
 
 
     @Override
@@ -100,11 +106,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);
         serviceSwitch = (SwitchCompat) findViewById(R.id.drawer_service_switch);
         userTv = (TextView) findViewById(R.id.drawer_user_tv);
-        nameTv = (TextView) findViewById(R.id.drawer_name_tv);
-        homeImg = (ImageButton) findViewById(R.id.mark_home_imgview);
+        homeImg = (ImageView) findViewById(R.id.mark_home_imgview);
         locationLl = (ListView) findViewById(R.id.drawer_location_list);
         addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
+        getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
 
         serviceSwitch.setEnabled(false);
         userEditIv.setClickable(true);
@@ -118,11 +124,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getDataFromDb();
         setupListView();
 
+
         if (home == null) {
             homeImg.setImageResource(R.drawable.ic_home_red);
         } else {
             homeImg.setImageResource(R.drawable.ic_home_green);
-            if(userTv.getText().length() >2 && nameTv.getText().length() >2){
+            if(userTv.getText().length() >2){
                 serviceSwitch.setEnabled(true);
             }
         }
@@ -144,7 +151,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     private void setViewListeners() {
 
         // click listener for home button
@@ -152,12 +158,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 if(home == null){
-                    markCurrentLocationAsHome();
+                    GetHomeTask task = new GetHomeTask();
+                    task.execute(config.getUrl(),userTv.getText().toString());
                 }else{
 
                 }
             }
         });
+
 
         addLocationBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -187,7 +195,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (b) {
                     // in case of home location has not been set, and username not set
                     // we cannot start using service.
-                    if (home == null || userTv.getText().length() < 3 || nameTv.getText().length() < 3) {
+                    if (home == null || userTv.getText().length() < 3) {
                         serviceSwitch.setChecked(false);
                     } else {
                         startService();
@@ -219,11 +227,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
 
-        final TextView urlTv = promptsView.findViewById(R.id.settings_url_tv);
+        final TextInputEditText urlEt = promptsView.findViewById(R.id.settings_url_et);
         final Button clearLocDbBtn = promptsView.findViewById(R.id.settings_clear_location_db_btn);
         final Button clearUserDbBtn = promptsView.findViewById(R.id.settings_clear_user_db_btn);
         final Button doneBtn = promptsView.findViewById(R.id.settings_done_btn);
-        urlTv.setText(Utils.url);
+        urlEt.setText(OpenHABConfig.getInstance().getUrl());
 
 
         final AlertDialog alertDialog = alertDialogBuilder.create();
@@ -234,7 +242,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 realm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
-
                         realm.delete(OpenHABLocation.class);
                         locations.clear();
                         adapter.setLocations(locations);
@@ -245,7 +252,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         stopService();
                         serviceSwitch.setChecked(false);
                         serviceSwitch.setEnabled(false);
-
+                        homeImg.setImageResource(R.drawable.ic_home_red);
                     }
                 });
             }
@@ -259,12 +266,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void execute(Realm realm) {
                         realm.delete(OpenHABUser.class);
                         user = null;
-                        nameTv.setText("");
                         userTv.setText("");
                         stopService();
                         serviceSwitch.setChecked(false);
                         serviceSwitch.setEnabled(false);
-
                     }
                 });
             }
@@ -273,6 +278,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         doneBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        OpenHABConfig.setInstance(realm.where(OpenHABConfig.class).findFirst());
+                        OpenHABConfig conf = OpenHABConfig.getInstance();
+                        if(urlEt.getText().toString().isEmpty()){
+                            conf.setBackupUrl();
+                        }else{
+                            conf.setUrl(urlEt.getText().toString());
+                        }
+
+                    }
+                });
+
                 alertDialog.dismiss();
             }
         });
@@ -301,9 +320,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
 
-        final TextInputEditText settingNameEt = (TextInputEditText) promptsView
-                .findViewById(R.id.change_name_et);
-
         final TextInputEditText settingUserEt = (TextInputEditText) promptsView
                 .findViewById(R.id.change_user_et);
         final Button okBtn = (Button) promptsView.findViewById(R.id.change_user_ok_btn);
@@ -330,23 +346,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         okBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(settingUserEt.getText().length() < 2 ||settingNameEt.getText().length() < 2){
+                if(settingUserEt.getText().length() < 2 ){
                     return;
                 }
                 realm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
+                        user = realm.where(OpenHABUser.class).findFirst();
                         if(user == null){
                             user = realm.createObject(OpenHABUser.class);
-                        }else{
-                            user = realm.where(OpenHABUser.class).findFirst();
                         }
                         user.setUser(settingUserEt.getText().toString());
-                        user.setName(settingNameEt.getText().toString());
                     }
                 });
                 userTv.setText(user.getUser());
-                nameTv.setText(user.getName());
+
+                // finding home by using new name..
+                new GetHomeTask().execute(config.getUrl(),settingUserEt.getText().toString());
 
                 alertDialog.dismiss();
             }
@@ -431,7 +447,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             newLocation.setId(locationId);
                             newLocation.setRadius(Integer.valueOf(locationRadius.getText().toString()));
                             newLocation.setName(locationName.getText().toString());
-                            newLocation.setDbName(user.getName() + "_" + locationName.getText().toString());
+                            newLocation.setDbName(user.getUser() + "_" + locationName.getText().toString());
                             newLocation.setLocation(wrapLocation);
                         }
                     });
@@ -564,7 +580,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
                             OpenHABUser user = realm.createObject(OpenHABUser.class);
-                            user.setName(nameTv.getText().toString().trim());
                             user.setUser(userTv.getText().toString().trim());
                             user.setLastLocation(home);
                         }
@@ -674,19 +689,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LocationPollerParameter parameter = new LocationPollerParameter(bundle);
 
         // this will be the intent that the LocationReceiver will receive
-        Intent broardcastIntent = new Intent(this, LocationReceiver.class);
+        Intent broardcastIntentLocation = new Intent(this, LocationReceiver.class);
+        final String SEND_LOCATION = "se2gce17.openhab_se2.LocationReceiver";
+        IntentFilter intentFilterLocation = new IntentFilter(SEND_LOCATION);
+        this.registerReceiver(new LocationReceiver(), intentFilterLocation);
 
-        final String SOME_ACTION = "se2gce17.openhab_se2.LocationReceiver";
-        IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
-        this.registerReceiver(new LocationReceiver(), intentFilter);
+
+        // this will be the intent that the NotificationReceiver will receive
+        Intent broardcastIntentNotification = new Intent(this, NotificationReceiver.class);
+        final String SEND_NOTIFICATION = "se2gce17.openhab_se2.NotificationReceiver";
+        IntentFilter intentFilterNotification = new IntentFilter(SEND_NOTIFICATION);
+        this.registerReceiver(new LocationReceiver(), intentFilterNotification);
 
 
-        parameter.setIntentToBroadcastOnCompletion(broardcastIntent);
+        parameter.setIntentToBroadcastOnCompletion(broardcastIntentLocation);
+        parameter.setIntentToBroadcastOnCompletion(broardcastIntentNotification);
+
+
         // try GPS and fall back to NETWORK_PROVIDER
         parameter.setProviders(new String[] {LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER});
         parameter.setTimeout(60000); // 1 minutes
         i.putExtras(bundle);
-
 
 
         pi=PendingIntent.getBroadcast(this, 0, i, 0);
@@ -776,9 +799,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if(user.getUser() != null){
                     userTv.setText(user.getUser());
                 }
-                if(user.getName() != null){
-                    nameTv.setText(user.getName());
-                }
 
                 OpenHABLocation location = realm.where(OpenHABLocation.class).equalTo("id",0).findFirst();
                 if(location != null){
@@ -793,10 +813,100 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         locations.add(l);
                     }
                 }
+                config = realm.where(OpenHABConfig.class).findFirst();
+                if(config == null){
+                    config = realm.createObject(OpenHABConfig.class);
+                    config.setBackupUrl();
+                }
+                OpenHABConfig.setInstance(config);
+
+                Log.e("DB data","my url: "+config.getUrl());
             }
         });
 
     }
 
 
+
+    private class GetHomeTask extends AsyncTask<String,Void,String>{
+        private OkHttpClient client;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            getHomeProgress.setVisibility(View.VISIBLE);
+            homeImg.setVisibility(View.INVISIBLE);
+
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                client = new OkHttpClient();
+
+
+                Request request = new Request.Builder()
+                        .url(strings[0]+"getHome="+strings[1])
+                        .build();
+
+
+                Response response = client.newCall(request).execute();
+                if(response.body() != null){
+                    String responseBody = response.body().string();
+                    Log.e("GET_HOME","response: "+responseBody);
+                    String decrypted = Utils.decrypt(responseBody);
+                    Log.e("GET_HOME","decrypted respose: "+decrypted);
+                    return decrypted;
+
+                }
+                return null;
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String returnValue) {
+            super.onPostExecute(returnValue);
+            getHomeProgress.setVisibility(View.INVISIBLE);
+            homeImg.setVisibility(View.VISIBLE);
+            if(returnValue == null){
+
+                // if invalid location is return we cannot use service.
+                homeImg.setImageResource(R.drawable.ic_home_red);
+                Toast.makeText(MapsActivity.this,"Your user has not been created in openHAB",Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            String[] result = returnValue.split(":");
+            final double latitude = Double.valueOf(result[0]);
+            final double longitude = Double.valueOf(result[1]);
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    RealmLocationWrapper rlw = realm.createObject(RealmLocationWrapper.class);
+                    rlw.setLatitude(latitude);
+                    rlw.setLongitude(longitude);
+                    rlw.setTime(System.currentTimeMillis());
+
+                    OpenHABLocation newHome = realm.where(OpenHABLocation.class).equalTo("id",0).findFirst();
+                    if(newHome == null){
+                        newHome = realm.createObject(OpenHABLocation.class);
+                    }
+                    newHome.setDbName("Home");
+                    newHome.setName("Home");
+                    newHome.setId(0);
+                    newHome.setImgResourceId(R.drawable.ic_home_green);
+                    newHome.setRadius(OpenHABConfig.getInstance().getHomeRadius());
+                    newHome.setLocation(rlw);
+                    home = rlw;
+                    homeImg.setImageResource(R.drawable.ic_home_green);
+                    serviceSwitch.setEnabled(true);
+                }
+            });
+
+        }
+    }
 }

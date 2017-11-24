@@ -14,9 +14,9 @@
     <application
         android:allowBackup="true"
         android:name=".OpenHABApplication"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/smart_home_logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/smart_home_logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
@@ -46,6 +46,7 @@
         <receiver android:name=".cwac_loclpoll.LocationPoller" />
         <service android:name=".cwac_loclpoll.LocationPollerService" />
         <receiver android:name=".LocationReceiver"/>
+        <receiver android:name=".NotificationReceiver"/>
 
     </application>
 

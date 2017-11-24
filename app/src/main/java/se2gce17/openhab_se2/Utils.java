@@ -1,8 +1,23 @@
 package se2gce17.openhab_se2;
 
+import android.annotation.TargetApi;
 import android.location.Location;
+import android.util.Base64;
 
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
+import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
+
+import static android.util.Base64.DEFAULT;
 
 /**
  * Created by Nicolaj Pedersen on 21-11-2017.
@@ -10,7 +25,7 @@ import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 public class Utils {
 
-    public static final String url = "http://95.85.57.71:8080/NorthqGpsService/gps?";
+    public static OpenHABConfig config;
 
     /**
      *
@@ -36,5 +51,69 @@ public class Utils {
             return 1;
         }
         return 0;
+    }
+
+
+
+    private static final byte[] keyValue = "Beercalc12DTU123".getBytes();
+
+    // Generates a key
+    private static Key generateKey() {
+        Key key = new SecretKeySpec(keyValue, "AES");
+        return key;
+    }
+
+
+    @TargetApi(11)
+    public static String encrypt(String plainText) {
+        try {
+            Cipher AesCipher = Cipher.getInstance("AES");
+            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey());
+
+
+            return new String(Base64.encode(AesCipher.doFinal(plainText.getBytes()), DEFAULT));
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @TargetApi(11)
+    public static String decrypt(String cipherText) {
+        try {
+            Cipher AesCipher;
+            AesCipher = Cipher.getInstance("AES");
+            AesCipher.init(Cipher.DECRYPT_MODE, generateKey());
+            System.out.println(AesCipher.doFinal(Base64.decode(cipherText.getBytes(),DEFAULT)).length);
+
+
+            return new String(AesCipher.doFinal(Base64.decode(cipherText.getBytes(), DEFAULT)));
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 }

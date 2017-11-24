@@ -10,18 +10,8 @@ import io.realm.annotations.RealmClass;
 @RealmClass
 public class OpenHABUser implements io.realm.RealmModel {
 
-    private String name;
     private String user;
     private OpenHABLocation lastLocation;
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getUser() {
         return user;

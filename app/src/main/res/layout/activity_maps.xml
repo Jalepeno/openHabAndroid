@@ -65,24 +65,12 @@
                 android:gravity="bottom"
                 android:layout_gravity="bottom"
                 android:id="@+id/drawer_user_tv"
-                android:textColor="#ffffff"
-                android:fontFamily="sans-serif-thin"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:hint="user"
-                android:textSize="20dp"/>
-
-            <TextView
-                android:lines="1"
-                android:gravity="bottom"
-                android:layout_gravity="bottom"
-                android:id="@+id/drawer_name_tv"
                 android:fontFamily="sans-serif"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="20dp"
-                android:hint="name"
+                android:hint="user"
                 />
 
 
@@ -153,6 +141,7 @@
                     android:layout_gravity="right|center_vertical"
                     android:gravity="right"
                     android:enabled="true"
+                    android:layout_marginRight="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
@@ -178,15 +167,31 @@
                     android:layout_height="1dp"
                     android:layout_weight="1"
                     />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="16dp">
 
-                <ImageButton
-                    android:id="@+id/mark_home_imgview"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="right"
-                    android:background="#00ffffff"
-                    android:padding="0dp"
-                    android:src="@drawable/ic_menu_camera" />
+                    <ImageView
+                        android:id="@+id/mark_home_imgview"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="right"
+                        android:background="#00ffffff"
+                        android:visibility="visible"
+                        android:src="@drawable/ic_menu_camera" />
+
+                    <ProgressBar
+                        android:id="@+id/mark_home_progress"
+                        android:visibility="invisible"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        />
+
+
+                </FrameLayout>
+
+
 
 
             </LinearLayout>
