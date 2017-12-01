@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">openhab-se2</string>
+    <string name="app_name">openHAB NorthQ</string>
     <string name="title_activity_maps">Map</string>
     <string name="default_upload_website">http://95.85.57.71:8080/NorthqGpsService/gps?</string>
     <string name="title_activity_navigation">NavigationActivity</string>
@@ -12,4 +12,15 @@
     <string name="title_location_permission">Request location permission</string>
     <string name="text_location_permission">this app requires pomission to location data, for working properly</string>
     <string name="ok">OK</string>
+
+
+    <!-- Notification strings -->
+    <string name="notification_header">openHAB Notification</string>
+    <string name="notification_message">Your motion sensor %1$s was triggered at while %2$s all users were out.</string>
+
+    <!-- Toast strings-->
+    <string name="toast_get_home_no_user">Your user has not been created in openHAB</string>
+
+
+
 </resources>

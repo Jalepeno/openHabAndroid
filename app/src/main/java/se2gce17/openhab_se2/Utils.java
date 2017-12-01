@@ -7,6 +7,7 @@ import android.util.Base64;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -15,6 +16,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 import se2gce17.openhab_se2.models.OpenHABConfig;
+import se2gce17.openhab_se2.models.OpenHABNotification;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 import static android.util.Base64.DEFAULT;
@@ -115,5 +117,19 @@ public class Utils {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    public static int compareNotifications(OpenHABNotification notif1, OpenHABNotification notif2){
+        if(notif1 == null && notif2 == null){
+            return 0;
+        }else if(notif1 == null){
+            return -1;
+        }else if(notif2 == null){
+            return 1;
+        }
+        Timestamp ts1 = Timestamp.valueOf(notif1.getTimestamp());
+        Timestamp ts2 = Timestamp.valueOf(notif2.getTimestamp());
+        return ts1.compareTo(ts2);
     }
 }

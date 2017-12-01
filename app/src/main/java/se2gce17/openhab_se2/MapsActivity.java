@@ -1,8 +1,10 @@
 package se2gce17.openhab_se2;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -45,7 +47,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -112,7 +113,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
 
-        serviceSwitch.setEnabled(false);
+
+        serviceSwitch.setEnabled(isMyServiceRunning(LocationReceiver.class));
+        serviceSwitch.setChecked(isMyServiceRunning(LocationReceiver.class));
+
+
         userEditIv.setClickable(true);
         settingsIv.setClickable(true);
 
@@ -149,7 +154,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     }
-
 
     private void setViewListeners() {
 
@@ -626,7 +630,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -695,15 +698,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.registerReceiver(new LocationReceiver(), intentFilterLocation);
 
 
-        // this will be the intent that the NotificationReceiver will receive
-        Intent broardcastIntentNotification = new Intent(this, NotificationReceiver.class);
-        final String SEND_NOTIFICATION = "se2gce17.openhab_se2.NotificationReceiver";
-        IntentFilter intentFilterNotification = new IntentFilter(SEND_NOTIFICATION);
-        this.registerReceiver(new LocationReceiver(), intentFilterNotification);
 
 
         parameter.setIntentToBroadcastOnCompletion(broardcastIntentLocation);
-        parameter.setIntentToBroadcastOnCompletion(broardcastIntentNotification);
+//        parameter.setIntentToBroadcastOnCompletion(broardcastIntentNotification);
 
 
         // try GPS and fall back to NETWORK_PROVIDER
@@ -733,6 +731,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -876,13 +885,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 // if invalid location is return we cannot use service.
                 homeImg.setImageResource(R.drawable.ic_home_red);
-                Toast.makeText(MapsActivity.this,"Your user has not been created in openHAB",Toast.LENGTH_LONG).show();
+                Toast.makeText(MapsActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
                 return;
             }
 
-            String[] result = returnValue.split(":");
-            final double latitude = Double.valueOf(result[0]);
-            final double longitude = Double.valueOf(result[1]);
+            String[] result = returnValue.split(","); // this is the format that can be copied directly from google maps
+            final double latitude = Double.valueOf(result[0].trim());
+            final double longitude = Double.valueOf(result[1].trim());
             realm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
