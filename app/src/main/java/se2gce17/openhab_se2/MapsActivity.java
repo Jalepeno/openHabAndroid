@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -117,6 +118,8 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
   //      addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
+
+
 
 
         serviceSwitch.setEnabled(isMyServiceRunning(LocationReceiver.class));
@@ -810,6 +813,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
             super.onPreExecute();
             getHomeProgress.setVisibility(View.VISIBLE);
             homeImg.setVisibility(View.INVISIBLE);
+
 
         }
 
