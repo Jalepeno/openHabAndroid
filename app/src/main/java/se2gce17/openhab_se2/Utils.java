@@ -102,6 +102,9 @@ public class Utils {
 
     @TargetApi(11)
     public static String decrypt(String keyValue, String cipherText) {
+        if(cipherText == null || cipherText.isEmpty()){
+            return "";
+        }
         try {
             Cipher AesCipher;
             AesCipher = Cipher.getInstance("AES");

@@ -216,6 +216,9 @@ public class LocationReceiver extends BroadcastReceiver {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
+            if(s == null || s.isEmpty()){
+                return;
+            }
             String[] notifications = s.split(":");
             OpenHABNotification notification = new OpenHABNotification(notifications[0]);
             OpenHABNotification latestNotification = compareNotifications(notifications);

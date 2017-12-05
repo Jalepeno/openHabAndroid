@@ -52,4 +52,8 @@
     <string name="dialog_location_radius_hint">Location radius</string>
     <string name="dialog_location_mark">Mark</string>
 
+
+    <!-- test values -->
+    <string name="backup_url">http://se2-openhab03.compute.dtu.dk:9090/NorthqGpsService/gps?</string>
+
 </resources>

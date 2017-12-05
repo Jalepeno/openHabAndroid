@@ -18,6 +18,11 @@ public class OpenHABConfig implements io.realm.RealmModel {
 
     }
 
+    /**
+     * this function uses realm to create a new instance if non is existant
+     * the realm transaction requires main thread to work
+     * @return
+     */
     public static OpenHABConfig getInstance(){
         if(instance == null){
             Realm realm = Realm.getDefaultInstance();

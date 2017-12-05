@@ -76,7 +76,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
     private GoogleApiClient mGoogleApiClient;
     private boolean showingDialog = false;
 
-    private final int MY_PERMISSIONS_REQUEST_LOCATION = 963852741;
+    private final int MY_PERMISSIONS_REQUEST_LOCATION = 963;
     private LocationRequest locationRequest;
     private SwitchCompat serviceSwitch;
 /*    private ImageView userEditIv;
@@ -119,9 +119,6 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
 
-
-
-
         serviceSwitch.setEnabled(isMyServiceRunning(LocationReceiver.class));
         serviceSwitch.setChecked(isMyServiceRunning(LocationReceiver.class));
 
@@ -138,15 +135,9 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         getDataFromDb();
         setupListView();
 
+        CheckHomeEnable();
 
-        if (home == null) {
-            homeImg.setImageResource(R.drawable.ic_home_red);
-        } else {
-            homeImg.setImageResource(R.drawable.ic_home_green);
-            if(userTv.getText().length() >2){
-                serviceSwitch.setEnabled(true);
-            }
-        }
+
 
         setViewListeners();
         if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
@@ -185,6 +176,27 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    private boolean CheckHomeEnable(){
+
+        if(OpenHABConfig.getInstance().getEncryptionKey() == null || OpenHABConfig.getInstance().getEncryptionKey().isEmpty() ||
+                OpenHABConfig.getInstance().getUrl() == null || OpenHABConfig.getInstance().getUrl().isEmpty() ||
+                user == null || user.getUser().isEmpty()){
+            homeImg.setImageResource(R.drawable.ic_home_disabled);
+            homeImg.setClickable(false);
+            return false;
+        }
+        else if (home == null) {
+            homeImg.setImageResource(R.drawable.ic_home_red);
+            homeImg.setClickable(true);
+
+        } else {
+            homeImg.setImageResource(R.drawable.ic_home_green);
+            homeImg.setClickable(true);
+        }
+        return true;
+
+    }
+
 
     private void setViewListeners() {
 
@@ -192,7 +204,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         homeImg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(OpenHABConfig.getInstance().getUrl() != null && OpenHABConfig.getInstance().getEncryptionKey() != null){
+                if(OpenHABConfig.getInstance().getUrl() != null && OpenHABConfig.getInstance().getEncryptionKey() != null && !OpenHABConfig.getInstance().getEncryptionKey().isEmpty()){
                     GetHomeTask task = new GetHomeTask();
                     task.execute(OpenHABConfig.getInstance().getUrl(),userTv.getText().toString(),OpenHABConfig.getInstance().getEncryptionKey());
                 }else{
@@ -208,26 +220,6 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
-/*        addLocationBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLocationDialog();
-            }
-        });*/
-
-/*        userEditIv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startEditUserDialog();
-            }
-        });
-
-        settingsIv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startSettingsDialog();
-            }
-        });*/
 
         // event listener for switch
         serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -338,6 +330,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                             conf.setEncryptionKey(keyEt.getText().toString().trim());
 
                         }
+                        homeImg.setClickable(true);
 
                     }
                 });
@@ -374,24 +367,10 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                 .findViewById(R.id.change_user_et);
         final Button okBtn = (Button) promptsView.findViewById(R.id.change_user_ok_btn);
         final Button cancelBtn = (Button) promptsView.findViewById(R.id.change_user_cancel_btn);
-//        okBtn.setEnabled(false);
 
-//        View.OnFocusChangeListener focusListener = new View.OnFocusChangeListener() {
-//            @Override
-//            public void onFocusChange(View view, boolean b) {
-//                if (settingNameEt.getText().length() > 2 && settingUserEt.getText().length() > 2) {
-//                    okBtn.setEnabled(true);
-//                } else {
-//                    okBtn.setEnabled(false);
-//                }
-//            }
-//        };
-//        okBtn.setOnFocusChangeListener(focusListener);
-
-
-
-
-
+        if(user != null){
+            settingUserEt.setText(user.getUser());
+        }
         // create alert dialog
         final AlertDialog alertDialog = alertDialogBuilder.create();
 
@@ -414,7 +393,9 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                 userTv.setText(user.getUser());
 
                 // finding home by using new name..
-                new GetHomeTask().execute(OpenHABConfig.getInstance().getUrl(),settingUserEt.getText().toString());
+                if(CheckHomeEnable()){
+                    new GetHomeTask().execute(OpenHABConfig.getInstance().getUrl(),user.getUser(),OpenHABConfig.getInstance().getEncryptionKey());
+                }
 
                 alertDialog.dismiss();
             }
@@ -431,6 +412,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
                 showingDialog = false;
+
             }
         });
         showingDialog = true;
@@ -501,6 +483,9 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                             newLocation.setName(locationName.getText().toString());
                             newLocation.setDbName(user.getUser() + "_" + locationName.getText().toString());
                             newLocation.setLocation(wrapLocation);
+                            Log.d("NorthQ", "new Location: (Name: "+newLocation.getName()
+                                    +", lat: "+String.valueOf(newLocation.getLocation().getLatitude())
+                                    +", long: "+String.valueOf(newLocation.getLocation().getLongitude()));
                         }
                     });
                 }
@@ -512,6 +497,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
                 showingDialog = false;
+                CheckHomeEnable();
             }
         });
         showingDialog = true;
@@ -606,6 +592,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         } else {
             super.onBackPressed();
         }*/
+        super.onBackPressed();
     }
 
 
@@ -856,8 +843,13 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                 homeImg.setImageResource(R.drawable.ic_home_red);
                 Toast.makeText(MapsActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
                 return;
+            }else if(returnValue.isEmpty()){
+                // if invalid location is return we cannot use service.
+                homeImg.setImageResource(R.drawable.ic_home_red);
+                Toast.makeText(MapsActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
+                return;
             }
-
+            Log.e("response", returnValue);
             String[] result = returnValue.split(","); // this is the format that can be copied directly from google maps
             final double latitude = Double.valueOf(result[0].trim());
             final double longitude = Double.valueOf(result[1].trim());
