@@ -8,9 +8,10 @@
 
     <TextView
         style="@style/Base.DialogWindowTitle.AppCompat"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Change user"/>
+        android:text="@string/dialog_user_header"/>
 
     <android.support.design.widget.TextInputLayout
         android:padding="8dp"
@@ -23,7 +24,7 @@
             android:inputType="textPersonName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="user"/>
+            android:hint="@string/dialog_user_hint"/>
     </android.support.design.widget.TextInputLayout>
 
     <LinearLayout
@@ -38,7 +39,7 @@
             android:id="@+id/change_user_cancel_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cancel"
+            android:text="@string/dialog_cancel"
             android:layout_marginRight="8dp"/>
 
         <Button
@@ -46,7 +47,7 @@
             android:id="@+id/change_user_ok_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ok"/>
+            android:text="@string/dialog_ok"/>
 
 
     </LinearLayout>

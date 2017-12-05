@@ -13,14 +13,43 @@
     <string name="text_location_permission">this app requires pomission to location data, for working properly</string>
     <string name="ok">OK</string>
 
+    <!-- Main activity -->
+    <string name="main_start_service">Start location Service</string>
+    <string name="main_user_hint">user</string>
+    <string name="main_home">Home</string>
 
+    
     <!-- Notification strings -->
     <string name="notification_header">openHAB Notification</string>
     <string name="notification_message">Your motion sensor %1$s was triggered at while %2$s all users were out.</string>
+
 
     <!-- Toast strings-->
     <string name="toast_get_home_no_user">Your user has not been created in openHAB</string>
 
 
+
+    <!-- Dialogs -->
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_done">Done</string>
+
+    <!-- settings dialog-->
+    <string name="dialog_settings_header">Settings</string>
+    <string name="dialog_settings_url_hint">url</string>
+    <string name="dialog_settings_encrypt_hint">Encryption key</string>
+    <string name="dialog_setting_clear_location_btn">Clear Locations Database</string>
+    <string name="dialog_setting_clear_user_btn">Clear User In Database</string>
+
+
+    <!-- user dialog -->
+    <string name="dialog_user_header">Change user</string>
+    <string name="dialog_user_hint">user</string>
+
+
+    <!-- new location -->
+    <string name="dialog_location_name_hint">Location Name</string>
+    <string name="dialog_location_radius_hint">Location radius</string>
+    <string name="dialog_location_mark">Mark</string>
 
 </resources>

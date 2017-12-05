@@ -15,6 +15,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.realm.Realm;
 import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABNotification;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
@@ -57,20 +58,21 @@ public class Utils {
 
 
 
-    private static final byte[] keyValue = "Beercalc12DTU123".getBytes();
+//     private static final byte[] keyValue = "Beercalc12DTU123".getBytes();
 
     // Generates a key
-    private static Key generateKey() {
-        Key key = new SecretKeySpec(keyValue, "AES");
+    private static Key generateKey(String keyValue) {
+
+        Key key = new SecretKeySpec(keyValue.getBytes(), "AES");
         return key;
     }
 
 
     @TargetApi(11)
-    public static String encrypt(String plainText) {
+    public static String encrypt(OpenHABConfig conf,String plainText) {
         try {
             Cipher AesCipher = Cipher.getInstance("AES");
-            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey());
+            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey(conf.getEncryptionKey()));
 
 
             return new String(Base64.encode(AesCipher.doFinal(plainText.getBytes()), DEFAULT));
@@ -94,11 +96,11 @@ public class Utils {
     }
 
     @TargetApi(11)
-    public static String decrypt(String cipherText) {
+    public static String decrypt(String keyValue, String cipherText) {
         try {
             Cipher AesCipher;
             AesCipher = Cipher.getInstance("AES");
-            AesCipher.init(Cipher.DECRYPT_MODE, generateKey());
+            AesCipher.init(Cipher.DECRYPT_MODE, generateKey(keyValue));
             System.out.println(AesCipher.doFinal(Base64.decode(cipherText.getBytes(),DEFAULT)).length);
 
 

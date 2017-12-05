@@ -161,9 +161,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         homeImg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(home == null){
+                if(home == null && config.getUrl() != null && config.getEncryptionKey() != null){
                     GetHomeTask task = new GetHomeTask();
-                    task.execute(config.getUrl(),userTv.getText().toString());
+                    task.execute(config.getUrl(),userTv.getText().toString(),config.getEncryptionKey());
                 }else{
 
                 }
@@ -232,6 +232,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         alertDialogBuilder.setView(promptsView);
 
         final TextInputEditText urlEt = promptsView.findViewById(R.id.settings_url_et);
+        final TextInputEditText keyEt = promptsView.findViewById(R.id.settings_encryption_key_et);
         final Button clearLocDbBtn = promptsView.findViewById(R.id.settings_clear_location_db_btn);
         final Button clearUserDbBtn = promptsView.findViewById(R.id.settings_clear_user_db_btn);
         final Button doneBtn = promptsView.findViewById(R.id.settings_done_btn);
@@ -290,7 +291,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if(urlEt.getText().toString().isEmpty()){
                             conf.setBackupUrl();
                         }else{
-                            conf.setUrl(urlEt.getText().toString());
+                            conf.setUrl(urlEt.getText().toString().trim());
+                        }
+                        // adding new encryption key here.. this will be used for AES encryption
+                        if(!keyEt.getText().toString().isEmpty()){
+                            conf.setEncryptionKey(keyEt.getText().toString().trim());
                         }
 
                     }
@@ -863,7 +868,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if(response.body() != null){
                     String responseBody = response.body().string();
                     Log.e("GET_HOME","response: "+responseBody);
-                    String decrypted = Utils.decrypt(responseBody);
+                    String decrypted = Utils.decrypt(strings[2],responseBody);
                     Log.e("GET_HOME","decrypted respose: "+decrypted);
                     return decrypted;
 

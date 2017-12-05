@@ -12,6 +12,7 @@ public class OpenHABConfig implements io.realm.RealmModel {
 
     private String url;
     private int homeRadius;
+    private String encryptionKey;
 
     public OpenHABConfig(){
 
@@ -43,6 +44,13 @@ public class OpenHABConfig implements io.realm.RealmModel {
         this.url = "http://se2-openhab03.compute.dtu.dk:9090/NorthqGpsService/gps?";
     }
 
+    public String getEncryptionKey() {
+        return encryptionKey;
+    }
+
+    public void setEncryptionKey(String encryptionKey) {
+        this.encryptionKey = encryptionKey;
+    }
 
     public String getUrl() {
         return url;

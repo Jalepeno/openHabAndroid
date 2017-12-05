@@ -68,9 +68,10 @@ public class LocationReceiver extends BroadcastReceiver {
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
+                // retrieving notification list
+                OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
 
                 RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
-
                 for (OpenHABLocation l : results) {
                     if (Utils.calcLocationProximity(loc, l.getLocation(), l.getRadius()) == 1) {
                         openHABUser.setLastLocation(l);
@@ -87,14 +88,12 @@ public class LocationReceiver extends BroadcastReceiver {
                 }
 
                 // sending location data to server
-                sendLocationDataToWebsite(loc, openHABUser);
+                sendLocationDataToWebsite(loc, openHABUser,config);
 
 
-                // retrieving notification list
-                OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
                 NotificationsTask task = new NotificationsTask();
                 task.setContext(context);
-                new NotificationsTask().execute(config.getUrl(),openHABUser.getUser());
+                new NotificationsTask().execute(config.getUrl(),openHABUser.getUser(),config.getEncryptionKey());
             }
         });
 
@@ -108,7 +107,7 @@ public class LocationReceiver extends BroadcastReceiver {
     }
 
 
-    protected void sendLocationDataToWebsite(Location location, OpenHABUser oHABuser) {
+    protected void sendLocationDataToWebsite(Location location, OpenHABUser oHABuser, OpenHABConfig conf) {
         // ex "1;anders_home" for user with name = anders and is currently within the range of his home
 
         int proximity = Utils.calcLocationProximity(location, oHABuser.getLastLocation().getLocation(), oHABuser.getLastLocation().getRadius());
@@ -120,7 +119,7 @@ public class LocationReceiver extends BroadcastReceiver {
 
         String data = "" + proximity + ";" + oHABuser.getLastLocation().getDbName();
         // String data = ""+proximity+";"+"Home";
-        String encrypedData = Utils.encrypt(data);
+        String encrypedData = Utils.encrypt(conf,data);
 
         NetworkTask task = new NetworkTask();
 
@@ -206,7 +205,7 @@ public class LocationReceiver extends BroadcastReceiver {
 
                 Response response = client.newCall(request).execute();
 
-                return Utils.decrypt(response.body().string());
+                return Utils.decrypt(strings[2],response.body().string());
 
             } catch (IOException e) {
                 e.printStackTrace();

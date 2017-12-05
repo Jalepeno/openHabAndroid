@@ -70,7 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="20dp"
-                android:hint="user"
+                android:hint="@string/main_user_hint"
                 />
 
 
@@ -127,7 +127,7 @@
                 <TextView
                     android:textColor="@color/black_text_main"
                     android:textSize="18dp"
-                    android:text="Start location Service"
+                    android:text="@string/main_start_service"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
                 <View
@@ -159,7 +159,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:textSize="18dp"
-                    android:text="Home"/>
+                    android:text="@string/main_home"/>
 
                 <View
                     android:visibility="invisible"
@@ -190,10 +190,6 @@
 
 
                 </FrameLayout>
-
-
-
-
             </LinearLayout>
 
             <View

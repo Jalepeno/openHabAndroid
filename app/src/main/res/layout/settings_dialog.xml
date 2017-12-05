@@ -10,7 +10,7 @@
         android:layout_height="match_parent">
 
         <TextView
-            android:text="Settings"
+            android:text="@string/dialog_settings_header"
             android:gravity="center"
             style="@style/Base.TextAppearance.AppCompat.Title"
             android:layout_width="match_parent"
@@ -23,24 +23,40 @@
             android:id="@+id/settings_url_til"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="8dp">
             <android.support.design.widget.TextInputEditText
                 android:id="@+id/settings_url_et"
                 android:singleLine="true"
                 android:inputType="textPersonName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="url"/>
+                android:hint="@string/dialog_settings_url_hint"/>
+        </android.support.design.widget.TextInputLayout>
+
+
+        <android.support.design.widget.TextInputLayout
+            android:padding="8dp"
+            android:id="@+id/settings_encryption_key_til"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/settings_encryption_key_et"
+                android:singleLine="true"
+                android:inputType="textPersonName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/dialog_settings_encrypt_hint"/>
         </android.support.design.widget.TextInputLayout>
 
         <Button
             android:id="@+id/settings_clear_location_db_btn"
-            android:text="Clear Locations Database"
+            android:text="@string/dialog_setting_clear_location_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
         <Button
             android:id="@+id/settings_clear_user_db_btn"
-            android:text="Clear User In Database"
+            android:text="@string/dialog_setting_clear_user_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"/>
@@ -49,7 +65,7 @@
             android:id="@+id/settings_done_btn"
             style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
             android:layout_gravity="right"
-            android:text="Done"
+            android:text="@string/dialog_done"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
