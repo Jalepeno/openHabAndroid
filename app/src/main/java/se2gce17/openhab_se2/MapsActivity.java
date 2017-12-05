@@ -15,6 +15,7 @@ import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
@@ -26,6 +27,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -45,7 +49,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
@@ -65,27 +68,28 @@ import se2gce17.openhab_se2.models.OpenHABUser;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+public class MapsActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener{
 
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private boolean showingDialog = false;
 
-    private final int MY_PERMISSIONS_REQUEST_LOCATION = 123;
+    private final int MY_PERMISSIONS_REQUEST_LOCATION = 963852741;
     private LocationRequest locationRequest;
     private SwitchCompat serviceSwitch;
-    private ImageView userEditIv;
-    private ImageView settingsIv;
+/*    private ImageView userEditIv;
+    private ImageView settingsIv;*/
     private TextView userTv;
     private ImageView homeImg;
-    private ImageButton addLocationBtn;
+  //  private ImageButton addLocationBtn;
     private Location currentLocation;
     private RealmLocationWrapper home;
     private ListView locationLl;
     private LocationListAdapter adapter;
     private LinearLayout homeBackground;
     private ProgressBar getHomeProgress;
+    private FloatingActionButton fab;
 
     private Intent serviceIntent;
 
@@ -95,7 +99,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Realm realm;
     private OpenHABUser user;
     private ArrayList<OpenHABLocation> locations;
-    private static OpenHABConfig config;
+  //  private static OpenHABConfig config;
 
 
     @Override
@@ -103,13 +107,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        userEditIv = (ImageView) findViewById(R.id.drawer_account_iv);
-        settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);
+/*        userEditIv = (ImageView) findViewById(R.id.drawer_account_iv);
+        settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);*/
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         serviceSwitch = (SwitchCompat) findViewById(R.id.drawer_service_switch);
         userTv = (TextView) findViewById(R.id.drawer_user_tv);
         homeImg = (ImageView) findViewById(R.id.mark_home_imgview);
         locationLl = (ListView) findViewById(R.id.drawer_location_list);
-        addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
+  //      addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
 
@@ -118,13 +123,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         serviceSwitch.setChecked(isMyServiceRunning(LocationReceiver.class));
 
 
-        userEditIv.setClickable(true);
-        settingsIv.setClickable(true);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+/*        userEditIv.setClickable(true);
+        settingsIv.setClickable(true);*/
+
+/*        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+                .findFragmentById(R.id.map);*/
 
         getDataFromDb();
         setupListView();
@@ -155,30 +161,58 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.activity_menu, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.menu_user:
+                startEditUserDialog();
+                return true;
+            case R.id.menu_settings:
+                startSettingsDialog();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+
     private void setViewListeners() {
 
         // click listener for home button
         homeImg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(home == null && config.getUrl() != null && config.getEncryptionKey() != null){
+                if(OpenHABConfig.getInstance().getUrl() != null && OpenHABConfig.getInstance().getEncryptionKey() != null){
                     GetHomeTask task = new GetHomeTask();
-                    task.execute(config.getUrl(),userTv.getText().toString(),config.getEncryptionKey());
+                    task.execute(OpenHABConfig.getInstance().getUrl(),userTv.getText().toString(),OpenHABConfig.getInstance().getEncryptionKey());
                 }else{
 
                 }
             }
         });
 
-
-        addLocationBtn.setOnClickListener(new View.OnClickListener() {
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startLocationDialog();
             }
         });
 
-        userEditIv.setOnClickListener(new View.OnClickListener() {
+/*        addLocationBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startLocationDialog();
+            }
+        });*/
+
+/*        userEditIv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startEditUserDialog();
@@ -190,7 +224,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View view) {
                 startSettingsDialog();
             }
-        });
+        });*/
 
         // event listener for switch
         serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -237,6 +271,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         final Button clearUserDbBtn = promptsView.findViewById(R.id.settings_clear_user_db_btn);
         final Button doneBtn = promptsView.findViewById(R.id.settings_done_btn);
         urlEt.setText(OpenHABConfig.getInstance().getUrl());
+        keyEt.setText(OpenHABConfig.getInstance().getEncryptionKey());
 
 
         final AlertDialog alertDialog = alertDialogBuilder.create();
@@ -287,7 +322,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void execute(Realm realm) {
                         OpenHABConfig.setInstance(realm.where(OpenHABConfig.class).findFirst());
+
                         OpenHABConfig conf = OpenHABConfig.getInstance();
+
                         if(urlEt.getText().toString().isEmpty()){
                             conf.setBackupUrl();
                         }else{
@@ -296,6 +333,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // adding new encryption key here.. this will be used for AES encryption
                         if(!keyEt.getText().toString().isEmpty()){
                             conf.setEncryptionKey(keyEt.getText().toString().trim());
+
                         }
 
                     }
@@ -349,6 +387,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
+
+
         // create alert dialog
         final AlertDialog alertDialog = alertDialogBuilder.create();
 
@@ -371,7 +411,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 userTv.setText(user.getUser());
 
                 // finding home by using new name..
-                new GetHomeTask().execute(config.getUrl(),settingUserEt.getText().toString());
+                new GetHomeTask().execute(OpenHABConfig.getInstance().getUrl(),settingUserEt.getText().toString());
 
                 alertDialog.dismiss();
             }
@@ -554,95 +594,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onStop();
     }
 
-    private void markCurrentLocationAsHome() {
-            if(currentLocation == null){
-                Toast
-                        .makeText(this,
-                                "Location data not found",
-                                Toast.LENGTH_SHORT)
-                        .show();
-                return;
-
-            }
-            if (mGoogleApiClient != null) {
-                if(home == null){
-                    realm = Realm.getDefaultInstance();
-                    realm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(Realm realm) {
-
-                            RealmLocationWrapper wrapper = realm.createObject(RealmLocationWrapper.class);
-                            wrapper.setTime(currentLocation.getTime());
-                            wrapper.setLatitude(currentLocation.getLatitude());
-                            wrapper.setLongitude(currentLocation.getLongitude());
-                            home = wrapper;
-
-                            OpenHABLocation home = realm.createObject(OpenHABLocation.class);
-
-
-                            home.setLocation(wrapper);
-                            home.setId(0);
-                            home.setName("Home");
-                            home.setDbName("Home");
-                            home.setRadius(50); //TODO: make configurable
-                            home.setImgResourceId(R.drawable.ic_home_green);
-
-
-                            OpenHABUser user = realm.createObject(OpenHABUser.class);
-                            user.setUser(userTv.getText().toString().trim());
-                            user.setLastLocation(home);
-                        }
-                    });
-                    homeImg.setImageResource(R.drawable.ic_home_green);
-
-//                    mMap.addMarker(new MarkerOptions().position(new LatLng(home.getLatitude(),home.getLongitude())).title("Home"));
-                    serviceSwitch.setEnabled(true);
-                }
-            }
-
-
-    }
-
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        mMap.setMinZoomPreference(5f);
-        mMap.setMaxZoomPreference(15f);
-
-        if(checkLocationPermission()){
-            Location l = LocationServices.FusedLocationApi.getLastLocation(
-                    mGoogleApiClient);
-
-            if(l != null){
-                LatLng currentLocation = new LatLng(l.getLatitude(), l.getLongitude());
-
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-
-            }
-        }
-
-    }
-
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+      /*  DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
-        }
+        }*/
     }
 
 
@@ -827,7 +787,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         locations.add(l);
                     }
                 }
-                config = realm.where(OpenHABConfig.class).findFirst();
+                OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
                 if(config == null){
                     config = realm.createObject(OpenHABConfig.class);
                     config.setBackupUrl();

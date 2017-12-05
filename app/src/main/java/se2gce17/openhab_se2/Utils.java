@@ -69,10 +69,10 @@ public class Utils {
 
 
     @TargetApi(11)
-    public static String encrypt(OpenHABConfig conf,String plainText) {
+    public static String encrypt(String stringKey,String plainText) {
         try {
             Cipher AesCipher = Cipher.getInstance("AES");
-            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey(conf.getEncryptionKey()));
+            AesCipher.init(Cipher.ENCRYPT_MODE, generateKey(stringKey));
 
 
             return new String(Base64.encode(AesCipher.doFinal(plainText.getBytes()), DEFAULT));
@@ -93,6 +93,11 @@ public class Utils {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    public static String encrypt(OpenHABConfig conf,String plainText){
+        return encrypt(conf.getEncryptionKey(),plainText);
     }
 
     @TargetApi(11)
