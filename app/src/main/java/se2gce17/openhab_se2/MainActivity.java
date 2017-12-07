@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -21,8 +20,6 @@ import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
@@ -34,7 +31,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -49,7 +45,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
@@ -69,7 +64,7 @@ import se2gce17.openhab_se2.models.OpenHABUser;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 
-public class MapsActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener{
 
     private GoogleMap mMap;
@@ -192,6 +187,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
         } else {
             homeImg.setImageResource(R.drawable.ic_home_green);
             homeImg.setClickable(true);
+            serviceSwitch.setEnabled(true);
         }
         return true;
 
@@ -235,7 +231,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 } else {
                     stopService();
-                    Toast.makeText(MapsActivity.this,
+                    Toast.makeText(MainActivity.this,
                                     "Service cancelled",
                             Toast.LENGTH_LONG)
                             .show();
@@ -451,7 +447,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onClick(View view) {
                 if(currentLocation == null){
-                    Toast.makeText(MapsActivity.this,
+                    Toast.makeText(MainActivity.this,
                             "Location data not found",
                             Toast.LENGTH_SHORT)
                             .show();
@@ -550,7 +546,7 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Prompt the user once explanation has been shown
-                                ActivityCompat.requestPermissions(MapsActivity.this,
+                                ActivityCompat.requestPermissions(MainActivity.this,
                                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                                         MY_PERMISSIONS_REQUEST_LOCATION);
                             }
@@ -841,12 +837,12 @@ public class MapsActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 // if invalid location is return we cannot use service.
                 homeImg.setImageResource(R.drawable.ic_home_red);
-                Toast.makeText(MapsActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
                 return;
             }else if(returnValue.isEmpty()){
                 // if invalid location is return we cannot use service.
                 homeImg.setImageResource(R.drawable.ic_home_red);
-                Toast.makeText(MapsActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this,getResources().getString(R.string.toast_get_home_no_user),Toast.LENGTH_LONG).show();
                 return;
             }
             Log.e("response", returnValue);

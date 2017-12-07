@@ -226,11 +226,9 @@ public class LocationReceiver extends BroadcastReceiver {
             if(latestNotification != null && !latestNotification.isRead()) {
                 latestNotification.setRead(true);
                 // The id of the channel.
-                String CHANNEL_ID = "openhab_channel_01";
                 NotificationCompat.Builder mBuilder =
                         new NotificationCompat.Builder(mContext)
                                 .setSmallIcon(R.mipmap.smart_home_logo)
-                                .setChannel(CHANNEL_ID)
                                 .setContentTitle(mContext.getResources().getString(R.string.notification_header))
                                 .setContentText(mContext.getResources().getString(R.string.notification_message,notification.getDeviceId(),notification.getFormattedTimestamp()));
                 NotificationManager mNotifyMgr =
