@@ -3,6 +3,7 @@ package se2gce17.openhab_se2;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -19,6 +20,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -52,6 +54,7 @@ import java.util.ArrayList;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import io.realm.Sort;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -60,6 +63,7 @@ import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
 
 import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABLocation;
+import se2gce17.openhab_se2.models.OpenHABNotification;
 import se2gce17.openhab_se2.models.OpenHABUser;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
@@ -235,8 +239,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                     "Service cancelled",
                             Toast.LENGTH_LONG)
                             .show();
-
-
                 }
             }
         });
@@ -500,6 +502,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         alertDialog.show();
     }
 
+
+    /**
+     * whenever new location data is received, the location will be checked up agains the known location.
+     * if the location is within the known locations, the known location will be highlighted with
+     * an orange color.
+     */
     private void updateLocations() {
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -520,6 +528,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+    /**
+     * sets up list view along with adapter
+     */
     private void setupListView() {
         adapter = new LocationListAdapter(this,R.layout.location_list_layout);
         adapter.setLocations(locations);
@@ -527,6 +538,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         locationLl.invalidate();
     }
 
+    /**
+     * this function is run whenever the app is opened, as the app needs permission to run the services
+     * @return
+     */
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
@@ -567,11 +582,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+
     protected void onStart() {
         if(mGoogleApiClient != null)
             mGoogleApiClient.connect();
         super.onStart();
     }
+
 
     protected void onStop() {
         if(mGoogleApiClient != null)
@@ -769,7 +786,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 locations  = new ArrayList<>();
                 for(OpenHABLocation l : results){
                     if(l.getId()>0){// id of home is 0, which we don't want to add here
-                        System.out.println("location found: "+l.getName());
+                        Log.i("realm DB","location found: "+l.getName());
                         locations.add(l);
                     }
                 }
@@ -779,7 +796,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     config.setBackupUrl();
                 }
                 OpenHABConfig.setInstance(config);
-
                 Log.e("DB data","my url: "+config.getUrl());
             }
         });
@@ -788,6 +804,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
 
 
+
+    /**
+     * This GetHomeTask is an async task, used for getting the home location from the openHAB web service.
+     * The task makes use of the string params added for url, data and encryption.
+     * String[0] url for web service
+     * String[1] user name used by web service.
+     * String[2] cipher key used for decryption.
+     */
     private class GetHomeTask extends AsyncTask<String,Void,String>{
         private OkHttpClient client;
 
@@ -799,6 +823,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
 
         }
+
 
         @Override
         protected String doInBackground(String... strings) {
@@ -865,7 +890,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     newHome.setName("Home");
                     newHome.setId(0);
                     newHome.setImgResourceId(R.drawable.ic_home_green);
-                    newHome.setRadius(OpenHABConfig.getInstance().getHomeRadius());
+                    newHome.setRadius(100);
                     newHome.setLocation(rlw);
                     home = rlw;
                     homeImg.setImageResource(R.drawable.ic_home_green);

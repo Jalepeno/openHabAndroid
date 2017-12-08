@@ -68,6 +68,13 @@ public class Utils {
     }
 
 
+    /**
+     * This function is used to encrypt data for communication with the openHAB service
+     * by using a base54 encoding on a aes cipher based on the string key.
+     * @param stringKey
+     * @param plainText
+     * @return returns encrypted string
+     */
     @TargetApi(11)
     public static String encrypt(String stringKey,String plainText) {
         try {
@@ -96,10 +103,24 @@ public class Utils {
     }
 
 
+    /**
+     * This function is used to encrypt data for communication with the openHAB service
+     * by using a base54 encoding on a aes cipher based on a key value available in the config file.
+     * @param conf this config file contains the variables set by the user, will be used for encryption.
+     * @param plainText this will be the message sent
+     * @return returns encrypted string
+     */
     public static String encrypt(OpenHABConfig conf,String plainText){
         return encrypt(conf.getEncryptionKey(),plainText);
     }
 
+    /**
+     * decrypts the cipher text received using the provided key value. The cipher text will be decrypted
+     * first by base64 decoding followed by the eas cipher, using the provided key
+     * @param keyValue
+     * @param cipherText
+     * @return returns decrypted string
+     */
     @TargetApi(11)
     public static String decrypt(String keyValue, String cipherText) {
         if(cipherText == null || cipherText.isEmpty()){
@@ -130,6 +151,13 @@ public class Utils {
     }
 
 
+    /**
+     * THe notifications added are compared by their timestamp. The timestamps are strings, that are
+     * formatted as mySQL date format.
+     * @param notif1
+     * @param notif2
+     * @return
+     */
     public static int compareNotifications(OpenHABNotification notif1, OpenHABNotification notif2){
         if(notif1 == null && notif2 == null){
             return 0;

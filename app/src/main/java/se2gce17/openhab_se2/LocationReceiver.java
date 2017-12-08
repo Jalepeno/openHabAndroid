@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import io.realm.Sort;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -51,6 +52,20 @@ public class LocationReceiver extends BroadcastReceiver {
         Log.e("LocationReceiver", "intent has been wakened");
         Bundle b = intent.getExtras();
 
+
+        Realm realm = Realm.getDefaultInstance();
+        final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
+        final OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
+
+         if (openHABUser == null) {
+            Log.e(TAG, "the user is null");
+            return;
+        }
+
+        new NotificationsTask().execute(config.getUrl(),openHABUser.getUser(),config.getEncryptionKey());
+
+
+
         LocationPollerResult locationResult = new LocationPollerResult(b);
         final Location loc = locationResult.getLocation();
         if (loc == null) {
@@ -58,20 +73,16 @@ public class LocationReceiver extends BroadcastReceiver {
             return;
         }
 
-        Realm realm = Realm.getDefaultInstance();
-        final OpenHABUser openHABUser = realm.where(OpenHABUser.class).findFirst();
-        if (openHABUser == null) {
-            Log.e(TAG, "the user is null");
-            return;
-        }
+
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
                 // retrieving notification list
-                OpenHABConfig config = realm.where(OpenHABConfig.class).findFirst();
 
-                RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll();
+
+                // search result is sorted ascending to prioritize home location with id = 0!
+                RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll().sort("id", Sort.ASCENDING);
                 for (OpenHABLocation l : results) {
                     if (Utils.calcLocationProximity(loc, l.getLocation(), l.getRadius()) == 1) {
                         openHABUser.setLastLocation(l);
@@ -79,9 +90,6 @@ public class LocationReceiver extends BroadcastReceiver {
                         // this is to prioritize the home location (index 0)
                         break;
                     }
-                }
-                if (openHABUser == null) {
-                    return;
                 }
                 if (openHABUser.getLastLocation() == null) {
                     openHABUser.setLastLocation(results.get(0));
@@ -93,7 +101,7 @@ public class LocationReceiver extends BroadcastReceiver {
 
                 NotificationsTask task = new NotificationsTask();
                 task.setContext(context);
-                new NotificationsTask().execute(config.getUrl(),openHABUser.getUser(),config.getEncryptionKey());
+
             }
         });
 
@@ -107,12 +115,20 @@ public class LocationReceiver extends BroadcastReceiver {
     }
 
 
+    /**
+     * before sending the location data, the proximity has to be calculated and the data has to be
+     * structured accordingly.
+     * @param location current location.
+     * @param oHABuser this is our updated user, it contains last known location along with location radius.
+     * @param conf used for url and encryption.
+     */
     protected void sendLocationDataToWebsite(Location location, OpenHABUser oHABuser, OpenHABConfig conf) {
         // ex "1;anders_home" for user with name = anders and is currently within the range of his home
 
         int proximity = Utils.calcLocationProximity(location, oHABuser.getLastLocation().getLocation(), oHABuser.getLastLocation().getRadius());
         // int proximity = 1;
-        Log.d(TAG, "is close to " + oHABuser.getLastLocation().getDbName() + ": " + proximity + "  --  location id:" + oHABuser.getLastLocation().getId());
+        Log.e(TAG,"location name: "+oHABuser.getLastLocation().getDbName() + " - location radius: "+oHABuser.getLastLocation().getRadius());
+        Log.e(TAG, "is close to " + oHABuser.getLastLocation().getDbName() + ": " + proximity + "  --  location id:" + oHABuser.getLastLocation().getId());
         if (proximity == -1) { // error check, if current location or last location is null
             return;
         }
@@ -199,13 +215,16 @@ public class LocationReceiver extends BroadcastReceiver {
             try {
                 client = new OkHttpClient();
 
+                Log.d(TAG, "notifications url: "+strings[0]+"getNotifications="+strings[1]);
+
                 Request request = new Request.Builder()
-                        .url(strings[0]+"getNotification="+strings[1])
+                        .url(strings[0]+"getNotifications="+strings[1])
                         .build();
 
                 Response response = client.newCall(request).execute();
-
-                return Utils.decrypt(strings[2],response.body().string());
+                String data  = response.body().string();
+                Log.d(TAG,"encrypted notifications! : "+data);
+                return Utils.decrypt(strings[2],data);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -219,7 +238,8 @@ public class LocationReceiver extends BroadcastReceiver {
             if(s == null || s.isEmpty()){
                 return;
             }
-            String[] notifications = s.split(":");
+            Log.e(TAG,"notifications !!! - "+s);
+            String[] notifications = s.split(";");
             OpenHABNotification notification = new OpenHABNotification(notifications[0]);
             OpenHABNotification latestNotification = compareNotifications(notifications);
 
@@ -241,14 +261,22 @@ public class LocationReceiver extends BroadcastReceiver {
     }
 
 
-
+    /**
+     * As all notifications are received as strings, and needed to be put into objects for comparison.
+     * for the
+     * @param notifications
+     * @return
+     */
     private OpenHABNotification compareNotifications(final String[] notifications) {
         Realm realm = Realm.getDefaultInstance();
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                RealmResults<OpenHABNotification> storedNotifications = realm.where(OpenHABNotification.class).findAllSorted("device_id");
-                OpenHABNotification latestStoredNotification = storedNotifications.get(0);
+                RealmResults<OpenHABNotification> storedNotifications = realm.where(OpenHABNotification.class).findAll();
+                OpenHABNotification latestStoredNotification = null;
+                if(storedNotifications.size() > 0){
+                    latestStoredNotification = storedNotifications.get(storedNotifications.size()-1);
+                }
 
                 for(int loopi = notifications.length-1;loopi>=0;loopi--){ // look at the earliest notification first
                     String[] notifValues = notifications[loopi].split(",");
@@ -257,9 +285,11 @@ public class LocationReceiver extends BroadcastReceiver {
                     OpenHABNotification newestNotification = realm.createObject(OpenHABNotification.class);
                     newestNotification.setTimestamp(notifValues[0]);
                     newestNotification.setDeviceId(notifValues[1]);
+                    newestNotification.setRead(false);
+                    newestNotification.setNotificationId(0);
 
                     // compare with current notifications
-                    if(Utils.compareNotifications(newestNotification,latestStoredNotification)>0){ // already null secure
+                    if(Utils.compareNotifications(newestNotification,latestStoredNotification)>0){
                         newestNotification.setRead(false);
                         if(latestStoredNotification != null){ // if null the database is empty
                             latestNotificationId = latestStoredNotification.getNotificationId()+1;
