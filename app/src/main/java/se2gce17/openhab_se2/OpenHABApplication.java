@@ -4,7 +4,7 @@ import android.app.Application;
 import io.realm.Realm;
 
 /**
- * Created by Nicolaj Pedersen on 11-11-2017.
+ * @Author Nicolaj & Aslan - Initial contribution
  */
 public class OpenHABApplication extends Application {
 

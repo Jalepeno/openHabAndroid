@@ -4,7 +4,7 @@ import io.realm.Realm;
 import io.realm.annotations.RealmClass;
 
 /**
- * Created by Nicolaj Pedersen on 21-11-2017.
+ * @Author Nicolaj & Dan - Initial contribution
  */
 @RealmClass
 public class OpenHABConfig implements io.realm.RealmModel {
@@ -45,6 +45,10 @@ public class OpenHABConfig implements io.realm.RealmModel {
         return instance;
     }
 
+    /**
+     * this function is maninly specific for the project testing purpose, as it will be
+     * hard to enter every time the app is reinstalled.
+     */
     public void setBackupUrl(){
         this.url = "http://se2-openhab03.compute.dtu.dk:9090/NorthqGpsService/gps?";
     }

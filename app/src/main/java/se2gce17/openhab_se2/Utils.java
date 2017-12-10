@@ -3,6 +3,7 @@ package se2gce17.openhab_se2;
 import android.annotation.TargetApi;
 import android.location.Location;
 import android.util.Base64;
+import android.util.Log;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -23,19 +24,18 @@ import se2gce17.openhab_se2.models.RealmLocationWrapper;
 import static android.util.Base64.DEFAULT;
 
 /**
- * Created by Nicolaj Pedersen on 21-11-2017.
+ * This Util class holds various functions used in multiple places.
+ * @Author Nicolaj & Dan - Initial contribution
  */
 
 public class Utils {
-
-    public static OpenHABConfig config;
 
     /**
      *
      * @param loc1 current location
      * @param loc2 targeted location
      * @param distanceProx proimity in meters must be >= 0
-     * @return returns 1 in locations are within proximity of eachotther, else return 0;
+     * @return returns 1 in locations are within proximity of each other, else return 0;
      */
     public static int calcLocationProximity(Location loc1, RealmLocationWrapper loc2, int distanceProx) {
 
@@ -43,6 +43,7 @@ public class Utils {
             return -1;
         }
 
+        // need an empty location object to contain the values of the location wrapper
         Location lastLocation = new Location("");
         lastLocation.setLatitude(loc2.getLatitude());
         lastLocation.setLongitude(loc2.getLongitude());
@@ -57,10 +58,11 @@ public class Utils {
     }
 
 
-
-//     private static final byte[] keyValue = "Beercalc12DTU123".getBytes();
-
-    // Generates a key
+    /**
+     * Generates an AES cipher key based on input
+     * @param keyValue should be 16 characters long
+     * @return returns an AES cipher key
+     */
     private static Key generateKey(String keyValue) {
 
         Key key = new SecretKeySpec(keyValue.getBytes(), "AES");
@@ -71,8 +73,8 @@ public class Utils {
     /**
      * This function is used to encrypt data for communication with the openHAB service
      * by using a base54 encoding on a aes cipher based on the string key.
-     * @param stringKey
-     * @param plainText
+     * @param stringKey used to produce an AES cipher key. should be 16 characters long
+     * @param plainText message that needs to be encrypted.
      * @return returns encrypted string
      */
     @TargetApi(11)
@@ -117,7 +119,7 @@ public class Utils {
     /**
      * decrypts the cipher text received using the provided key value. The cipher text will be decrypted
      * first by base64 decoding followed by the eas cipher, using the provided key
-     * @param keyValue
+     * @param keyValue used to produce an AES cipher key. should be 16 characters long
      * @param cipherText
      * @return returns decrypted string
      */
@@ -130,7 +132,6 @@ public class Utils {
             Cipher AesCipher;
             AesCipher = Cipher.getInstance("AES");
             AesCipher.init(Cipher.DECRYPT_MODE, generateKey(keyValue));
-            System.out.println(AesCipher.doFinal(Base64.decode(cipherText.getBytes(),DEFAULT)).length);
 
 
             return new String(AesCipher.doFinal(Base64.decode(cipherText.getBytes(), DEFAULT)));
@@ -153,7 +154,7 @@ public class Utils {
 
     /**
      * THe notifications added are compared by their timestamp. The timestamps are strings, that are
-     * formatted as mySQL date format.
+     * formatted as mySQL date format. example: "2017-12-24 23:59:59.9"
      * @param notif1
      * @param notif2
      * @return

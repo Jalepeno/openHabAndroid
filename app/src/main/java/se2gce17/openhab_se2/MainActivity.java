@@ -3,7 +3,6 @@ package se2gce17.openhab_se2;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -20,7 +19,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -54,7 +52,6 @@ import java.util.ArrayList;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
-import io.realm.Sort;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -63,26 +60,26 @@ import se2gce17.openhab_se2.cwac_loclpoll.LocationPollerParameter;
 
 import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABLocation;
-import se2gce17.openhab_se2.models.OpenHABNotification;
 import se2gce17.openhab_se2.models.OpenHABUser;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 
+/**
+ *This is the main activity of the app, it contains all views
+ *
+ * @Author Nicolaj & Aslan - Initial contribution
+ */
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener{
 
-    private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private boolean showingDialog = false;
 
     private final int MY_PERMISSIONS_REQUEST_LOCATION = 963;
     private LocationRequest locationRequest;
     private SwitchCompat serviceSwitch;
-/*    private ImageView userEditIv;
-    private ImageView settingsIv;*/
     private TextView userTv;
     private ImageView homeImg;
-  //  private ImageButton addLocationBtn;
     private Location currentLocation;
     private RealmLocationWrapper home;
     private ListView locationLl;
@@ -90,8 +87,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private LinearLayout homeBackground;
     private ProgressBar getHomeProgress;
     private FloatingActionButton fab;
-
-    private Intent serviceIntent;
 
     private static final int PERIOD = 60000; 	// 1 minute
     private PendingIntent pi=null;
@@ -107,36 +102,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-/*        userEditIv = (ImageView) findViewById(R.id.drawer_account_iv);
-        settingsIv = (ImageView) findViewById(R.id.drawer_settings_iv);*/
         fab = (FloatingActionButton) findViewById(R.id.fab);
         serviceSwitch = (SwitchCompat) findViewById(R.id.drawer_service_switch);
         userTv = (TextView) findViewById(R.id.drawer_user_tv);
         homeImg = (ImageView) findViewById(R.id.mark_home_imgview);
         locationLl = (ListView) findViewById(R.id.drawer_location_list);
-  //      addLocationBtn = (ImageButton) findViewById(R.id.drawer_add_location_btn);
         homeBackground = (LinearLayout) findViewById(R.id.drawer_home_location_ll);
         getHomeProgress = (ProgressBar) findViewById(R.id.mark_home_progress);
 
         serviceSwitch.setEnabled(isMyServiceRunning(LocationReceiver.class));
         serviceSwitch.setChecked(isMyServiceRunning(LocationReceiver.class));
 
-
-
-/*        userEditIv.setClickable(true);
-        settingsIv.setClickable(true);*/
-
-/*        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);*/
-
         getDataFromDb();
         setupListView();
 
         CheckHomeEnable();
-
-
 
         setViewListeners();
         if(checkLocationPermission()){ // if we dont have permission for location, we cannot use app.
@@ -154,6 +134,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+    /**
+     * auto generated function for menu
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -161,6 +146,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         return true;
     }
 
+    /**
+     * auto generated function for menu interaction
+     * @param item
+     * @return
+     */
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
@@ -175,6 +166,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    /**
+     * checks status for the available data, if all data is set, the home location can be retreived,
+     * if the home location is retrieved, the service can be started.
+     * @return
+     */
     private boolean CheckHomeEnable(){
 
         if(OpenHABConfig.getInstance().getEncryptionKey() == null || OpenHABConfig.getInstance().getEncryptionKey().isEmpty() ||
@@ -197,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-
+    /**
+     * sets the listeners for the buttons and switches in the view.
+     */
     private void setViewListeners() {
 
         // click listener for home button
@@ -245,6 +243,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+    /**
+     * This function starts a dialog for the settings. In the setting you can set the webservice url,
+     * the encryption key, and reset the database data.
+     */
     private void startSettingsDialog() {
         if(showingDialog){
             return;
@@ -348,6 +350,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         alertDialog.show();
     }
 
+    /**
+     * This function start the dialog for the user settings. In this dialog you can set your username,
+     * that is used by the web sercvice. This username must be existent on the web-service beforehand.
+     */
     private void startEditUserDialog() {
         if(showingDialog){
             return;
@@ -418,6 +424,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         alertDialog.show();
     }
 
+    /**
+     * This dialog is used for marking new locations. The location is baked based on your current gps
+     * location. the location can be named given a proximity radius used by the location service.
+     */
     private void startLocationDialog(){
         if(showingDialog){
             return;
@@ -597,20 +607,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
 
-    @Override
-    public void onBackPressed() {
-      /*  DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }*/
-        super.onBackPressed();
-    }
-
-
     /**
-     *
+     * This function acts on the users permission for location data upon being prompted upen first
+     * start up
      * @param requestCode
      * @param permissions
      * @param grantResults
@@ -648,7 +647,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
 
     /**
-     * starts the wakeful intent service
+     * starts the wakeful intent service for sending location data and retrieving notifications
      */
     public void startService(){
         Log.e("Service","Starting service ");
@@ -691,6 +690,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .show();
     }
 
+    /**
+     * stops any the service that sends location data at gets notifications.
+     */
     public void stopService(){
         if (mgr != null) {
             mgr.cancel(pi);
@@ -711,6 +713,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         return false;
     }
 
+    /**
+     * auto generated for GoogleApiClient interface that handles GoogleApiCallbacks.
+     * @param bundle
+     */
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         locationRequest = LocationRequest.create();
@@ -723,26 +729,41 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    /**
+     * auto generated for GoogleApiClient interface
+     * @param i
+     */
     @Override
     public void onConnectionSuspended(int i) {
 
     }
 
+    /**
+     * auto generated for GoogleApiClient interface
+     * @param connectionResult
+     */
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
 
+    /**
+     * auto generated for LocationListener
+     * @param hasCapture
+     */
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
 
-
+    /**
+     * * auto generated for LocationListener
+     * @param location
+     */
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
-        adapter.serCurrentLocation(location);
+        adapter.setCurrentLocation(location);
         if(home != null) {
             if (Utils.calcLocationProximity(location, home, 50) == 1) {
                 homeBackground.setBackgroundResource(R.color.orange500);
@@ -756,13 +777,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         Log.d("MAPS","new location has been found!!!! --- lat: "+location.getLatitude()+" -- long:"+location.getLongitude());
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        if(mMap != null){
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-        }
     }
 
+
     /**
-     * connectes to the Realm database and fetches the data
+     * connects to the Realm database and fetches the data upon startup.
      */
     public void getDataFromDb() {
         realm = Realm.getDefaultInstance();
@@ -829,12 +848,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         protected String doInBackground(String... strings) {
             try {
                 client = new OkHttpClient();
-
-
                 Request request = new Request.Builder()
                         .url(strings[0]+"getHome="+strings[1])
                         .build();
-
 
                 Response response = client.newCall(request).execute();
                 if(response.body() != null){

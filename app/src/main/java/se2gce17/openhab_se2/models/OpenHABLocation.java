@@ -4,13 +4,14 @@ package se2gce17.openhab_se2.models;
 import io.realm.annotations.RealmClass;
 
 /**
- * Created by Nicolaj Pedersen on 11-11-2017.
+ *
+ *
+ * @Author Nicolaj & Dan - Initial contribution
  */
-
 @RealmClass
 public class OpenHABLocation implements io.realm.RealmModel{
-    private RealmLocationWrapper location;
 
+    private RealmLocationWrapper location;
     private int id;
     private int radius;
     private String name;

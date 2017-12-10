@@ -34,8 +34,8 @@ import static android.content.Context.NOTIFICATION_SERVICE;
  * in the realm database.
  *
  * this services is called through the cwac_locpoll package library, that makes use of a wakeful intent.
-
- * Created by Nicolaj Pedersen on 23-10-2017.
+ *
+ * @Author Nicolaj & Dan - Initial contribution
  */
 public class LocationReceiver extends BroadcastReceiver {
 
@@ -64,8 +64,6 @@ public class LocationReceiver extends BroadcastReceiver {
 
         new NotificationsTask().execute(config.getUrl(),openHABUser.getUser(),config.getEncryptionKey());
 
-
-
         LocationPollerResult locationResult = new LocationPollerResult(b);
         final Location loc = locationResult.getLocation();
         if (loc == null) {
@@ -73,14 +71,10 @@ public class LocationReceiver extends BroadcastReceiver {
             return;
         }
 
-
-
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
                 // retrieving notification list
-
-
                 // search result is sorted ascending to prioritize home location with id = 0!
                 RealmResults<OpenHABLocation> results = realm.where(OpenHABLocation.class).findAll().sort("id", Sort.ASCENDING);
                 for (OpenHABLocation l : results) {
@@ -101,17 +95,8 @@ public class LocationReceiver extends BroadcastReceiver {
 
                 NotificationsTask task = new NotificationsTask();
                 task.setContext(context);
-
             }
         });
-
-     /*
-        home = (Location) intent.getExtras().get("location");
-        user = intent.getExtras().getString("user");
-        name = intent.getExtras().getString("username");
-     */
-
-
     }
 
 
@@ -241,6 +226,7 @@ public class LocationReceiver extends BroadcastReceiver {
             Log.e(TAG,"notifications !!! - "+s);
             String[] notifications = s.split(";");
             OpenHABNotification notification = new OpenHABNotification(notifications[0]);
+
             OpenHABNotification latestNotification = compareNotifications(notifications);
 
             if(latestNotification != null && !latestNotification.isRead()) {

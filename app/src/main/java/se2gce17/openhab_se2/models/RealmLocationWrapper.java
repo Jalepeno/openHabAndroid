@@ -3,7 +3,7 @@ package se2gce17.openhab_se2.models;
 import io.realm.annotations.RealmClass;
 
 /**
- * Created by Nicolaj Pedersen on 11-11-2017.
+ * @Author Nicolaj & Dan - Initial contribution
  */
 @RealmClass
 public class RealmLocationWrapper implements io.realm.RealmModel{

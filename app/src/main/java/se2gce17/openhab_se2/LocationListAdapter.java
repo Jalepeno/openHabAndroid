@@ -20,7 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Nicolaj Pedersen on 15-11-2017.
+ * This adapter is used to handle the extra locations marked by the used and stored in the database.
+ * the locations are shown in the main view, and for now only implements a TextView for displaying name
+ * and the root LinearLayout for highlighting.
+ *
+ * @Author Nicolaj & Dan - Initial contribution
  */
 public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
 
@@ -54,14 +58,13 @@ public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
 
         View rowView = inflater.inflate(R.layout.location_list_layout,parent,false);
         TextView tv = (TextView) rowView.findViewById(R.id.list_location_name_tv);
-        ImageView iv = (ImageView) rowView.findViewById(R.id.list_location_iv);
         LinearLayout ll = (LinearLayout) rowView.findViewById(R.id.list_location_ll);
 
         tv.setText(locations.get(position).getName());
-        iv.setImageResource(locations.get(position).getImgResourceId());
 
+        // background is highlighted in orange oif the location is within proximity
         if(currentLocation != null){
-            if(calcLocationProximity(locations.get(position).getLocation(),locations.get(position).getRadius())== 1){
+            if(Utils.calcLocationProximity(currentLocation,locations.get(position).getLocation(),locations.get(position).getRadius())== 1){
                 ll.setBackgroundResource(R.color.orange500);
             }else{
                 ll.setBackgroundResource(R.color.white_solid);
@@ -69,31 +72,10 @@ public class LocationListAdapter extends ArrayAdapter<OpenHABLocation> {
         }else{
             ll.setBackgroundResource(R.color.white_solid);
         }
-
-
-
         return rowView;
     }
 
-    private int calcLocationProximity( RealmLocationWrapper loc2, int distanceProx) {
-
-        Location lastLocation = new Location("");
-        lastLocation.setLatitude(loc2.getLatitude());
-        lastLocation.setLongitude(loc2.getLongitude());
-
-        if(currentLocation == null || loc2 == null){
-            return -1;
-        }
-
-        float distance = currentLocation.distanceTo(lastLocation);
-        if ((int) distance <= distanceProx) {
-            return 1;
-        }
-        return 0;
-
-    }
-
-    public void serCurrentLocation(Location location) {
+    public void setCurrentLocation(Location location) {
         currentLocation = location;
     }
 }

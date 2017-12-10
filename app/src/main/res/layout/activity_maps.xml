@@ -1,37 +1,19 @@
-<!--<android.support.v4.widget.DrawerLayout
-    android:id="@+id/drawer_layout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:openDrawer="start">-->
-
+<?xml version="1.0" encoding="utf-8"?>
 <!--
-
-        <fragment
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+ * @Author Nicolaj & Aslan - Initial contribution
+ * @Author Nicolaj & Dan - GUI update
 -->
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
-    android:layout_width="match_parent"
+    android:layout_width="match_parent">
 
-    >
-
-
-
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="start">
-
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,27 +21,6 @@
             android:background="@drawable/main_background"
             android:orientation="vertical"
             android:padding="8dp">
-
-            <!--           <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="right">
-
-                <ImageView
-                    android:id="@+id/drawer_account_iv"
-                    android:src="@drawable/ic_user"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"/>
-
-
-                <ImageView
-                    android:id="@+id/drawer_settings_iv"
-                    android:src="@drawable/ic_settings_white"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>-->
 
             <View
                 android:layout_width="wrap_content"
@@ -216,21 +177,6 @@
                 android:layout_weight="1"
                 android:divider="@color/white_solid"/>
 
-<!--            <View
-                android:visibility="visible"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                />
-
-            <ImageButton
-                android:id="@+id/drawer_add_location_btn"
-                android:layout_gravity="bottom|center_horizontal"
-                android:src="@drawable/ic_plus_black"
-                style="@style/Base.Widget.AppCompat.Button.Borderless"
-                android:gravity="bottom"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />-->
 
         </LinearLayout>
 
@@ -248,10 +194,3 @@
         android:layout_height="wrap_content" />
 
 </android.support.design.widget.CoordinatorLayout>
-
-
-
-
-
-<!--
-</android.support.v4.widget.DrawerLayout>-->

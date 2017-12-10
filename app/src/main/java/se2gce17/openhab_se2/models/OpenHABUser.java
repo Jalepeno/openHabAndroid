@@ -4,9 +4,9 @@ import io.realm.annotations.RealmClass;
 
 
 /**
- * Created by Nicolaj Pedersen on 11-11-2017.
+ *
+ * @Author Nicolaj & Dan - Initial contribution
  */
-
 @RealmClass
 public class OpenHABUser implements io.realm.RealmModel {
 
