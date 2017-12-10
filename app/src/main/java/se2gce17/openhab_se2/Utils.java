@@ -3,7 +3,6 @@ package se2gce17.openhab_se2;
 import android.annotation.TargetApi;
 import android.location.Location;
 import android.util.Base64;
-import android.util.Log;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -16,7 +15,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.realm.Realm;
 import se2gce17.openhab_se2.models.OpenHABConfig;
 import se2gce17.openhab_se2.models.OpenHABNotification;
 import se2gce17.openhab_se2.models.RealmLocationWrapper;

@@ -8,16 +8,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
 import se2gce17.openhab_se2.models.OpenHABLocation;
-import se2gce17.openhab_se2.models.RealmLocationWrapper;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This adapter is used to handle the extra locations marked by the used and stored in the database.
