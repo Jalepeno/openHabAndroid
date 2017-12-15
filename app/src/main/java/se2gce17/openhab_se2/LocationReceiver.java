@@ -122,7 +122,7 @@ public class LocationReceiver extends BroadcastReceiver {
         // String data = ""+proximity+";"+"Home";
         String encrypedData = Utils.encrypt(conf,data);
 
-        NetworkTask task = new NetworkTask();
+        SendLocationTask task = new SendLocationTask();
 
 
         //    Integer[] params = new Integer[]{Integer.valueOf(calcLocationProximity(home,location,100))};
@@ -133,12 +133,12 @@ public class LocationReceiver extends BroadcastReceiver {
 
 
     /**
-     * NetworkTask is the specified task to send the computed location data to the openHAB server
+     * SendLocationTask is the specified task to send the computed location data to the openHAB server
      * The sever url is found in the openHABConfig, and the user data is found in the uOpenHABUser.
      * The data is retrieved from the database, and the location data is calculated and encrypted
      * before added to the task.
      */
-    private class NetworkTask extends AsyncTask<String, Void, Void> {
+    private class SendLocationTask extends AsyncTask<String, Void, Void> {
 
         private OkHttpClient client;
 
@@ -153,10 +153,6 @@ public class LocationReceiver extends BroadcastReceiver {
                     client = new OkHttpClient();
                     final String user = strings[0];
                     final String data = strings[1];
-                    // params
-                    // 0 = name;
-                    // 1 = user;
-                    // 2 = data(encrypted)
 
                     try {
                         Request request = new Request.Builder()
